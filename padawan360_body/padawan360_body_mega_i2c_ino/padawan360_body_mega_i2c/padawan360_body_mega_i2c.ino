@@ -42,6 +42,7 @@ Placed a 10K ohm resistor between S1 & GND on the SyRen 10 itself
 // ************************** Options, Configurations, and Settings ***********************************
 
 
+
 // SPEED AND TURN SPEEDS
 //set these 3 to whatever speeds work for you. 0-stop, 127-full speed.
 const byte DRIVESPEED1 = 50;
@@ -66,7 +67,7 @@ boolean isLeftStickDrive = true;
 // If using a speed controller for the dome, sets the top speed. You'll want to vary it potenitally
 // depending on your motor. My Pittman is really fast so I dial this down a ways from top speed.
 // Use a number up to 127 for serial
-const byte DOMESPEED = 110;
+const byte DOMESPEED = 127;
 
 // Ramping- the lower this number the longer R2 will take to speedup or slow down,
 // change this by incriments of 1
@@ -103,7 +104,7 @@ byte vol = 20;
 // set automateDelay to min and max seconds between sounds
 byte automateDelay = random(5, 20); 
 //How much the dome may turn during automation.
-int turnDirection = 20;
+int turnDirection = 40;
 
 // Pin number to pull a relay high/low to trigger my upside down compressed air like R2's extinguisher
 #define EXTINGUISHERPIN 3
@@ -112,6 +113,7 @@ int turnDirection = 20;
 #include <MP3Trigger.h>
 #include <Wire.h>
 #include <XBOXRECV.h>
+#include <DYSound.h>
 
 
 /////////////////////////////////////////////////////////////////
@@ -163,15 +165,23 @@ ButtonEnum hpLightToggleButton;
 
 boolean isHPOn = false;
 
+//Use DYPlayer instead of MP3Trigger
+boolean UseDYPlayer = true;
 
 
+DYPlayer dyPlayer;
+
+//else{
 MP3Trigger mp3Trigger;
+//}
 USB Usb;
 XBOXRECV Xbox(&Usb);
 
 void setup() {
   Serial1.begin(SABERTOOTHBAUDRATE);
   Serial2.begin(DOMEBAUDRATE);
+  //Debugging 
+  //Serial.begin(115200);
 
 #if defined(SYRENSIMPLE)
   Syren10.motor(0);
@@ -200,9 +210,16 @@ void setup() {
 
   pinMode(EXTINGUISHERPIN, OUTPUT);
   digitalWrite(EXTINGUISHERPIN, HIGH);
-
-  mp3Trigger.setup();
-  mp3Trigger.setVolume(vol);
+  if (UseDYPlayer){
+    dyPlayer.setup();
+    dyPlayer.init();
+    dyPlayer.VolumeMid();
+  }
+  else{
+    mp3Trigger.setup();
+    mp3Trigger.setVolume(vol);
+  }
+  
 
   if(isLeftStickDrive) {
     throttleAxis = LeftHatY;
@@ -250,7 +267,14 @@ void loop() {
   // After the controller connects, Blink all the LEDs so we know drives are disengaged at start
   if (!firstLoadOnConnect) {
     firstLoadOnConnect = true;
-    mp3Trigger.play(21);
+
+    if (UseDYPlayer){
+      dyPlayer.Play(21);
+    }
+    else{
+      mp3Trigger.play(21);
+    }
+    
     Xbox.setLedMode(ROTATING, 0);
   }
   
@@ -265,10 +289,20 @@ void loop() {
     if (isDriveEnabled) {
       isDriveEnabled = false;
       Xbox.setLedMode(ROTATING, 0);
-      mp3Trigger.play(53);
+      if (UseDYPlayer){
+        dyPlayer.Play(53);
+      }
+      else{
+        mp3Trigger.play(53);
+      }
     } else {
       isDriveEnabled = true;
-      mp3Trigger.play(52);
+      if (UseDYPlayer){
+        dyPlayer.Play(52);
+      }
+      else{
+        mp3Trigger.play(52);
+      }
       // //When the drive is enabled, set our LED accordingly to indicate speed
       if (drivespeed == DRIVESPEED1) {
         Xbox.setLedOn(LED1, 0);
@@ -285,10 +319,20 @@ void loop() {
     if (isInAutomationMode) {
       isInAutomationMode = false;
       automateAction = 0;
-      mp3Trigger.play(53);
+      if (UseDYPlayer){
+        dyPlayer.Play(53);
+      }
+      else{
+        mp3Trigger.play(53);
+      }
     } else {
       isInAutomationMode = true;
-      mp3Trigger.play(52);
+      if (UseDYPlayer){
+        dyPlayer.Play(52);
+      }
+      else{
+        mp3Trigger.play(52);
+      }
     }
   }
 
@@ -301,7 +345,12 @@ void loop() {
       automateAction = random(1, 5);
 
       if (automateAction > 1) {
-        mp3Trigger.play(random(32, 52));
+        if (UseDYPlayer){
+          dyPlayer.Play(random(32, 52));
+        }
+        else{
+          mp3Trigger.play(random(32, 52));
+        }
       }
       if (automateAction < 4) {
 #if defined(SYRENSIMPLE)
@@ -337,7 +386,12 @@ void loop() {
     if (Xbox.getButtonPress(R1, 0)) {
       if (vol > 0) {
         vol--;
-        mp3Trigger.setVolume(vol);
+        if (UseDYPlayer){
+          dyPlayer.VolumeUp();
+        }
+        else{
+          mp3Trigger.setVolume(vol);
+        }
       }
     }
   }
@@ -346,7 +400,12 @@ void loop() {
     if (Xbox.getButtonPress(R1, 0)) {
       if (vol < 255) {
         vol++;
-        mp3Trigger.setVolume(vol);
+        if (UseDYPlayer){
+          dyPlayer.VolumeDown();
+        }
+        else{
+          mp3Trigger.setVolume(vol);
+        }
       }
     }
   }
@@ -384,19 +443,39 @@ void loop() {
   // Y Button and Y combo buttons
   if (Xbox.getButtonClick(Y, 0)) {
     if (Xbox.getButtonPress(L1, 0)) {
-      mp3Trigger.play(8);
+      if (UseDYPlayer){
+        dyPlayer.Play(8);
+      }
+      else{
+        mp3Trigger.play(8);
+      }
       //logic lights, random
       triggerI2C(10, 0);
     } else if (Xbox.getButtonPress(L2, 0)) {
-      mp3Trigger.play(2);
+      if (UseDYPlayer){
+        dyPlayer.Play(2);
+      }
+      else{
+        mp3Trigger.play(2);
+      }
       //logic lights, random
       triggerI2C(10, 0);
     } else if (Xbox.getButtonPress(R1, 0)) {
-      mp3Trigger.play(9);
+      if (UseDYPlayer){
+        dyPlayer.Play(9);
+      }
+      else{
+        mp3Trigger.play(9);
+      }
       //logic lights, random
       triggerI2C(10, 0);
     } else {
-      mp3Trigger.play(random(13, 17));
+      if (UseDYPlayer){
+        dyPlayer.Play(random(13, 17));
+      }
+      else{
+        mp3Trigger.play(random(13, 17));
+      }
       //logic lights, random
       triggerI2C(10, 0);
     }
@@ -405,7 +484,12 @@ void loop() {
   // A Button and A combo Buttons
   if (Xbox.getButtonClick(A, 0)) {
     if (Xbox.getButtonPress(L1, 0)) {
-      mp3Trigger.play(6);
+      if (UseDYPlayer){
+        dyPlayer.Play(6);
+      }
+      else{
+        mp3Trigger.play(6);
+      }
       //logic lights
       triggerI2C(10, 6);
       // HPEvent 11 - SystemFailure - I2C
@@ -413,7 +497,12 @@ void loop() {
       triggerI2C(26, 11);
       triggerI2C(27, 11);
     } else if (Xbox.getButtonPress(L2, 0)) {
-      mp3Trigger.play(1);
+      if (UseDYPlayer){
+        dyPlayer.Play(1);
+      }
+      else{
+        mp3Trigger.play(1);
+      }
       //logic lights, alarm
       triggerI2C(10, 1);
       //  HPEvent 3 - alarm - I2C
@@ -421,11 +510,21 @@ void loop() {
       triggerI2C(26, 3);
       triggerI2C(27, 3);
     } else if (Xbox.getButtonPress(R1, 0)) {
-      mp3Trigger.play(11);
+      if (UseDYPlayer){
+        dyPlayer.Play(11);
+      }
+      else{
+        mp3Trigger.play(11);
+      }
       //logic lights, alarm2Display
       triggerI2C(10, 11);
     } else {
-      mp3Trigger.play(random(17, 25));
+      if (UseDYPlayer){
+        dyPlayer.Play(random(17, 25));
+      }
+      else{
+        mp3Trigger.play(random(17, 25));
+      }
       //logic lights, random
       triggerI2C(10, 0);
     }
@@ -434,15 +533,30 @@ void loop() {
   // B Button and B combo Buttons
   if (Xbox.getButtonClick(B, 0)) {
     if (Xbox.getButtonPress(L1, 0)) {
-      mp3Trigger.play(7);
+      if (UseDYPlayer){
+        dyPlayer.Play(7);
+      }
+      else{
+        mp3Trigger.play(7);
+      }
       //logic lights, random
       triggerI2C(10, 0);
     } else if (Xbox.getButtonPress(L2, 0)) {
-      mp3Trigger.play(3);
+      if (UseDYPlayer){
+        dyPlayer.Play(3);
+      }
+      else{
+        mp3Trigger.play(3);
+      }
       //logic lights, random
       triggerI2C(10, 0);
     } else if (Xbox.getButtonPress(R1, 0)) {
-      mp3Trigger.play(10);
+      if (UseDYPlayer){
+        dyPlayer.Play(10);
+      }
+      else{
+        mp3Trigger.play(10);
+      }
       //logic lights bargrap
       triggerI2C(10, 10);
       // HPEvent 1 - Disco - I2C
@@ -450,7 +564,12 @@ void loop() {
       triggerI2C(26, 10);
       triggerI2C(27, 10);
     } else {
-      mp3Trigger.play(random(32, 52));
+      if (UseDYPlayer){
+        dyPlayer.Play(random(32, 52));
+      }
+      else{
+        mp3Trigger.play(random(32, 52));
+      }
       //logic lights, random
       triggerI2C(10, 0);
     }
@@ -460,13 +579,23 @@ void loop() {
   if (Xbox.getButtonClick(X, 0)) {
     // leia message L1+X
     if (Xbox.getButtonPress(L1, 0)) {
-      mp3Trigger.play(5);
+      if (UseDYPlayer){
+        dyPlayer.Play(5);
+      }
+      else{
+        mp3Trigger.play(5);
+      }
       //logic lights, leia message
       triggerI2C(10, 5);
       // Front HPEvent 1 - HoloMessage - I2C -leia message
       triggerI2C(25, 9);
     } else if (Xbox.getButtonPress(L2, 0)) {
-      mp3Trigger.play(4);
+      if (UseDYPlayer){
+        dyPlayer.Play(4);
+      }
+      else{
+        mp3Trigger.play(4);
+      }
       //logic lights
       triggerI2C(10, 4);
     } else if (Xbox.getButtonPress(R1, 0)) {
@@ -474,7 +603,12 @@ void loop() {
       //logic lights, random
       triggerI2C(10, 0);
     } else {
-      mp3Trigger.play(random(25, 32));
+      if (UseDYPlayer){
+        dyPlayer.Play(random(25, 32));
+      }
+      else{
+        mp3Trigger.play(random(25, 32));
+      }
       //logic lights, random
       triggerI2C(10, 0);
     }
@@ -508,20 +642,35 @@ void loop() {
       //change to medium speed and play sound 3-tone
       drivespeed = DRIVESPEED2;
       Xbox.setLedOn(LED2, 0);
-      mp3Trigger.play(53);
+      if (UseDYPlayer){
+        dyPlayer.Play(53);
+      }
+      else{
+        mp3Trigger.play(53);
+      }
       triggerI2C(10, 22);
     } else if (drivespeed == DRIVESPEED2 && (DRIVESPEED3 != 0)) {
       //change to high speed and play sound scream
       drivespeed = DRIVESPEED3;
       Xbox.setLedOn(LED3, 0);
-      mp3Trigger.play(1);
+      if (UseDYPlayer){
+        dyPlayer.Play(1);
+      }
+      else{
+        mp3Trigger.play(1);
+      }
       triggerI2C(10, 23);
     } else {
       //we must be in high speed
       //change to low speed and play sound 2-tone
       drivespeed = DRIVESPEED1;
       Xbox.setLedOn(LED1, 0);
-      mp3Trigger.play(52);
+      if (UseDYPlayer){
+        dyPlayer.Play(52);
+      }
+      else{
+        mp3Trigger.play(52);
+      }
       triggerI2C(10, 21);
     }
   }
@@ -573,6 +722,7 @@ void loop() {
     //stick in dead zone - don't spin dome
     domeThrottle = 0;
   }
+  
 
   Syren10.motor(1, domeThrottle);
 } // END loop()
