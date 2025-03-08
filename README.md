@@ -18,7 +18,7 @@ The R2/Droid Builders have a long history of raising money for groups like [Make
   - [USB Shield](#usb-shield)
   - [Xbox 360 Wireless USB Receiver](#xbox-360-wireless-usb-receiver)
   - [Xbox 360 Wireless Controller](#xbox-360-wireless-controller)
-  - [MP3 Trigger](#mp3-trigger)
+  - [Sound Board](#sound-board)
   - [Sabertooth Motor Controller - Feet](#sabertooth-motor-controller---feet)
   - [Syren Motor Controller - Dome](#syren-motor-controller---dome)
   - [Amp and Speakers](#amp-and-speakers)
@@ -106,9 +106,16 @@ Some people have had luck making some adjustments to get some 3rd Party receiver
 
   **Note:** I have seen the controller bundled with the USB receiver together. It was in the gaming peripheals department in my local Microcenter. It's marketed for PC gaming. Nice to get it in one package if you can if you don't have an extra 360 controller to spare.
 
-- ### MP3 Trigger
+- ### Sound Board
+  With this code you have two options:
 
-  [Sourced from SparkFun](https://www.sparkfun.com/products/11029). Be sure to get a microSD card too. Nothing too big, it's just MP3s.
+  A DYSV5W sound board (found on amazon/aliexpress)
+
+  or the typical MP3 Trigger
+
+  [Sourced from SparkFun](https://www.sparkfun.com/products/11029). 
+  
+  No matter which you go with, be sure to get a microSD card too. Nothing too big, it's just MP3s (1GB is plenty).
 
 - ### Sabertooth Motor Controller - Feet
 
@@ -143,6 +150,8 @@ Be sure you have the latest version of the Arduino IDE installed available [here
 
 Installing libraries and using the Arduino IDE is beyond the scope of this documentation. Refer to the Arduino website's documentation for how to install libraries and upload software to your Arduino here https://www.arduino.cc/en/Guide and here https://www.arduino.cc/en/guide/libraries#toc5 . Note, you do not need to include the library references (ex: `#include <Sabertooth.h>`) directly in your sketch as the code to include them is already there. They simply need to be installed so that the Arduino IDE software can find them when compiling the sketch. The libraries are provided as zip files to make for easy installation.
 
+The DYPlayer library has been added to the libraries folder so be sure to install that library as well
+
 ### USB Shield
 
 Solder the headers on the USB Shield if you purchased the unassembled version. Fit the shield over the Arduino UNO by lining up the pins and pushing in. It should fit snugly. Plug the Xbox 360 Wireless Receiver USB cable into the USB port. That was easy.
@@ -150,6 +159,36 @@ Solder the headers on the USB Shield if you purchased the unassembled version. F
 If you're using the Mega, orient the USB ports to line up over each other.
 
 ### Sound
+
+#### DYSV5W
+
+Connect the pins from the DY board to the Arduino 
+
+The library is hardcoded to use Serial0 (same as MP3Trigger), if you know what you are doing you can change the serial used, but if not just use the pins below
+
+| DY Board Pin    | Arduino Mega|
+| --------------- | ----------- |
+| IO0/TX          | 0 (RX0)     |
+| IO1/RX          | 1 (TX0)     |
+| VCC/5v+         | 5v          |
+| GND/5v-         | GND         |
+
+
+Also ensure that the dip switches are set according to the table below. Off is towards 1 2 3, on is towards ON DIP
+
+| -------- | ----------- |
+|     1    | OFF         |
+|     2    | OFF         |
+|     3    | ON          |
+
+
+Connect the Micro SD card to your computer and upload the files one by one in the numbered order. If you don't do this, you will not be able to control which sound files are triggered. It's picky about file names and ordering. It's annoying but really, do transfer them over one file at a time. You may also be able to use a Windows program called Drivesort to help out here too. Here's a [helpful video from builder Balders on how to load the sounds with Drivesort](https://youtu.be/UsMI2gW7Q40) 
+
+Now, insert it into the Dy board and hook up either the Ground Loop Isolator / Amp / Speaker using the 3.5mm jack on the board or the speaker pins.
+
+
+
+#### MP3 Trigger
 
 Connect the following pins from the MP3 Trigger to the Body Arduino
 
