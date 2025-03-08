@@ -176,10 +176,11 @@ The library is hardcoded to use Serial0 (same as MP3Trigger), if you know what y
 
 Also ensure that the dip switches are set according to the table below. Off is towards 1 2 3, on is towards ON DIP
 
-| -------- | ----------- |
-|     1    | OFF         |
-|     2    | OFF         |
-|     3    | ON          |
+| Dip Switch | State       |
+| ---------- | ----------- |
+| 1          | OFF         |
+| 2          | OFF         |
+| 3          | ON          |
 
 
 Connect the Micro SD card to your computer and upload the files one by one in the numbered order. If you don't do this, you will not be able to control which sound files are triggered. It's picky about file names and ordering. It's annoying but really, do transfer them over one file at a time. You may also be able to use a Windows program called Drivesort to help out here too. Here's a [helpful video from builder Balders on how to load the sounds with Drivesort](https://youtu.be/UsMI2gW7Q40) 
