@@ -433,9 +433,7 @@ void loop() {
     Xbox.setLedMode(ROTATING, 0);
   }
  
-#if define CHATPAD
-  check_chatpad()
-#endif
+  Check_Chatpad();
 
   if (Xbox.getButtonClick(XBOX, 0)) {
     if (Xbox.getButtonPress(L1, 0) && Xbox.getButtonPress(R1, 0)) {
@@ -668,7 +666,7 @@ void loop() {
       }
       //logic lights
       triggerI2C(10, 6);
-      astroPixelsSend("@APLE20005");
+      astroPixelsSend("@APLE20005\r");
       // HPEvent 11 - SystemFailure - I2C
       triggerI2C(25, 11);
       triggerI2C(26, 11);
@@ -683,7 +681,7 @@ void loop() {
       }
       //logic lights, alarm
       triggerI2C(10, 1);
-      astroPixelsSend("@APLE10505");
+      astroPixelsSend("@APLE10505\r");
       //  HPEvent 3 - alarm - I2C
       triggerI2C(25, 3);
       triggerI2C(26, 3);
@@ -773,7 +771,7 @@ void loop() {
       }
       //logic lights, leia message
       triggerI2C(10, 5);
-      astroPixelsSend("@APLE30000"); //Send leia sequence to astropixels
+      astroPixelsSend("@APLE30000\r"); //Send leia sequence to astropixels
       // Front HPEvent 1 - HoloMessage - I2C -leia message
       triggerI2C(25, 9);
     } else if (Xbox.getButtonPress(L2, 0)) {
@@ -1068,7 +1066,7 @@ void Check_Chatpad() {
   if (Xbox.getChatpadClick(XBOX_CHATPAD_D3, 0)) {
     //Imperial March
     dyPlayer.Play(11); // Imperial March 3m 5s
-    astroPixelsSend("@APLE40500");
+    astroPixelsSend("@APLE40500\r");
   }  
   
   if (Xbox.getChatpadClick(XBOX_CHATPAD_D4, 0)) {
