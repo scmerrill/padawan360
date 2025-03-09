@@ -248,8 +248,8 @@ For anyone with an older version of the MP3Trigger board, you may need to upgrad
 
   | AstroPixels     | Arduino Mega   |
   | --------------- | -----------    |
-  | T               | 14 (RX3)       |
-  | R               | 15 (TX0)       |
+  | T               | 15 (RX3)       |
+  | R               | 14 (TX0)       |
   | V (Optional)    | 5v (Optional)  |
   | G (Optional)    | GND (Optional) |
 
