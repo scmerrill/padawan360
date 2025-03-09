@@ -106,6 +106,8 @@ Some people have had luck making some adjustments to get some 3rd Party receiver
 
   **Note:** I have seen the controller bundled with the USB receiver together. It was in the gaming peripheals department in my local Microcenter. It's marketed for PC gaming. Nice to get it in one package if you can if you don't have an extra 360 controller to spare.
 
+  I also use a chatpad with my controller for more button combination options.
+
 - ### Sound Board
   With this code you have two options:
 
@@ -116,6 +118,10 @@ Some people have had luck making some adjustments to get some 3rd Party receiver
   [Sourced from SparkFun](https://www.sparkfun.com/products/11029). 
   
   No matter which you go with, be sure to get a microSD card too. Nothing too big, it's just MP3s (1GB is plenty).
+
+- ### PCA9685 Servo Controller
+  This sketch is also updated to support the PCA9685 servo controller. It is set up for 2 currently: one for the body servos and one for the dome. I will likely expand this to include 3 of these controllers for full dome servo support (2 each for the HPs, all dome panels, and pie panels, plus any other accessories such as fire extiguisher and dome lifter). There are basic animations included, but they are not the most robust, but works well for basic control for a low cost. These can be sourced cheaply from Amazon.
+
 
 - ### Sabertooth Motor Controller - Feet
 
@@ -132,6 +138,11 @@ Some people have had luck making some adjustments to get some 3rd Party receiver
 - ### Teeces lights
 
   The sketch provided here will work for version 3 of the Teeces lighting system for Logic Lights. Use the regular setup and installation instructions for the Teeces system. To control brightness and changing the lighting animations that match some scenes from the films (like the flicker pattern during the Leia Message), the Arduino for the Teeces system needs to be connected to the body Arduino via I2C. Connect the I2C pins from the Body Arduino to the Teeces Arduino. SDA->SDA pins and SCL->SCL pins. On the Uno these are A4 and A5 respectively and on the Mega they are 20 and 21. Verify the I2C pins on your Teeces Arduino. These can be connected via a slipring.
+
+- ### AstroPixels
+
+  This sketch is updated to support some astropixel commands. It is a low cost alternative to Teeces that uses neopixels. They can be sourced from [we-make-things](https://we-make-things.co.uk/product/astropixels/)
+
 
 - #### Optional
 
@@ -162,9 +173,13 @@ If you're using the Mega, orient the USB ports to line up over each other.
 
 #### DYSV5W
 
+Make sure `UseDYPlayer` is `true`. It is true by default, so if you are using this board you should be good. 
+
 Connect the pins from the DY board to the Arduino 
 
 The library is hardcoded to use Serial0 (same as MP3Trigger), if you know what you are doing you can change the serial used, but if not just use the pins below
+
+The busy pin is used to indicate that sound is currently playing. Trying to play a sound when another sound is playing will cause the board to stop playing anything altogether until reset, so we use this to try and prevent that. 
 
 | DY Board Pin    | Arduino Mega|
 | --------------- | ----------- |
@@ -172,6 +187,7 @@ The library is hardcoded to use Serial0 (same as MP3Trigger), if you know what y
 | IO1/RX          | 1 (TX0)     |
 | VCC/5v+         | 5v          |
 | GND/5v-         | GND         |
+| BUSY            | 8           |
 
 
 Also ensure that the dip switches are set according to the table below. Off is towards 1 2 3, on is towards ON DIP
@@ -191,11 +207,13 @@ Now, insert it into the Dy board and hook up either the Ground Loop Isolator / A
 
 #### MP3 Trigger
 
+Make sure `UseDYPlayer` is `false`. It is true by default, so if you are using an mp3 trigger be sure to change that. 
+
 Connect the following pins from the MP3 Trigger to the Body Arduino
 
-| MP3 Trigger Pin | Arduino UNO |
+| MP3 Trigger Pin | Arduino Mega|
 | --------------- | ----------- |
-| RX              | 1           |
+| RX              | 1 (TX0)     |
 | USBVCC          | 5v          |
 | GND             | GND         |
 
@@ -213,6 +231,40 @@ For anyone with an older version of the MP3Trigger board, you may need to upgrad
 2. Copy the resulting hex file to a microSD card and rename it to: “MP3TRIGR.HEX”. It does not need to be the only file on the card – it just needs to have that precise filename.
 3. Insert the microSD card into your MP3 Trigger and turn the power on while holding down the center navigation switch. Wait for the Status LED to go solid, then cycle the power.
 4. You’re now running the new firmware.
+
+### AstroPixels
+
+  IMPORTANT: In order for this functionality, you MUST have the AstroPixelsPlus firmware installed on your AstroPixels. See [the documentation](https://github.com/reeltwo/AstroPixelsPlus) for more info on this.
+
+  This sketch is updated to support some astropixel commands. These can be customized to be just about anything, but there is a few default ones included in this sketch. If you want to do custom lighting animations and sequences, you can look into the documentation [here](https://github.com/reeltwo/AstroPixelsPlus). Basically you just call the astroPixelsSend() function with the sequence e.g. `astroPixelsSend("@APLE30000")`
+
+  In order for this to work, astropixels TTLSerial2 should be hooked up to serial3 (Pins 14, 15) on the mega (remember tx goes to rx and vice versa). See the wiring below. Remember it must be hooked up to Serial2 on the AstroPixels
+
+  | AstroPixels     | Arduino Mega  |
+  | --------------- | -----------   |
+  | T               | 14 (RX3)      |
+  | R               | 15 (TX0)      |
+  | V (Optional)    | 5v (Optional) |
+  | G               | GND           |
+
+### PCA9685 Servo Controller
+  This sketch is also updated to support the PCA9685 servo controller. It is set up for 2 currently: one for the body servos and one for the dome. I will likely expand this to include 3 of these controllers for full dome servo support (2 each for the HPs, all dome panels, and pie panels, plus any other accessories such as fire extiguisher and dome lifter). There are basic animations included, but they are not the most robust, but works well for basic control for a low cost.
+
+  Wiring for these boards can be seen below. Also be sure to solder the address jumper on the additional boards. See [this article](https://learn.adafruit.com/16-channel-pwm-servo-driver/chaining-drivers) for more info.
+
+  | PCA9685-2 Pin   | PCA9685-1 Pin   | Arduino Mega |
+  | -----------     | --------------- | -----------  |
+  |                 | SCL             | SCL          |
+  |                 | SDA             | SDA          |
+  | SCL             | SCL             |              |
+  | SDA             | SDA             |              |
+  |                 | VCC             | 5v           |
+  |                 | GND             | GND          |
+  | VCC             | VCC             |              |
+  | GND             | GND             |              |
+
+  ![alt text](image-1.png)
+
 
 ### Dome
 

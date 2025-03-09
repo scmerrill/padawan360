@@ -46,7 +46,7 @@ Placed a 10K ohm resistor between S1 & GND on the SyRen 10 itself
 // SPEED AND TURN SPEEDS
 //set these 3 to whatever speeds work for you. 0-stop, 127-full speed.
 const byte DRIVESPEED1 = 50;
-// Recommend beginner: 50 to 75, experienced: 100 to 127, I like 100. 
+// Recommend beginner: 50 to 75, experienced: 100 to 127, I like 100.
 // These may vary based on your drive system and power system
 const byte DRIVESPEED2 = 100;
 //Set to 0 if you only want 2 speeds.
@@ -62,7 +62,7 @@ const byte TURNSPEED = 70;
 
 // Set isLeftStickDrive to true for driving  with the left stick
 // Set isLeftStickDrive to false for driving with the right stick (legacy and original configuration)
-boolean isLeftStickDrive = true; 
+boolean isLeftStickDrive = true;
 
 // If using a speed controller for the dome, sets the top speed. You'll want to vary it potenitally
 // depending on your motor. My Pittman is really fast so I dial this down a ways from top speed.
@@ -102,18 +102,120 @@ byte vol = 20;
 
 // Automation Delays
 // set automateDelay to min and max seconds between sounds
-byte automateDelay = random(5, 20); 
+byte automateDelay = random(5, 20);
 //How much the dome may turn during automation.
 int turnDirection = 40;
 
 // Pin number to pull a relay high/low to trigger my upside down compressed air like R2's extinguisher
 #define EXTINGUISHERPIN 3
 
+// Pin to receive the busy signal if the DYPlayer is playing a sound
+#define DYBUSYPIN 8
+
+// Enable chatpad with https://github.com/willtoth/USB_Host_Shield_2.0/tree/xbox-chatpad
+#define CHATPAD
+
 #include <Sabertooth.h>
 #include <MP3Trigger.h>
 #include <Wire.h>
 #include <XBOXRECV.h>
 #include <DYSound.h>
+#include <Adafruit_PWMServoDriver.h>
+
+Adafruit_PWMServoDriver pwm1 = Adafruit_PWMServoDriver(0x40);
+Adafruit_PWMServoDriver pwm2 = Adafruit_PWMServoDriver(0x41);
+uint8_t servonum = 0;
+
+//Door Open and Close positions for the Servos (Breadpan doors)
+//Adjust to match your values for your specific values
+// TODO: adjust these values
+
+int LeftDoorOpen = 180;   //Servo 0
+int LeftDoorClose = 487;  //Servo 0
+
+int RightDoorOpen = 440;   //Servo 1
+int RightDoorClose = 170;  //Servo 1
+
+// Animation values
+
+int GripperOpen = 270;   //Servo 3
+int GripperClose = 350;  //Servo 3
+
+int GripperArmIn = 170;   //Servo 2
+int GripperArmOut = 620;  //Servo 2
+
+int InterOut = 430;  //Servo 7
+int InterIn = 140;   //Servo 7
+
+int InterArmIn = 610;   //Servo 6
+int InterArmOut = 170;  //Servo 6
+
+int UpperUtilOut = 535;  //Servo 5
+int UpperUtilIn = 90;    //Servo 5
+int LowerUtilOut = 525;  //Servo 4
+int LowerUtilIn = 130;   //Servo 4
+
+int dataportDoorOpen = 440;   //Servo 8
+int dataportDoorClose = 180;  //Servo 8
+
+int chargebayDoorOpen = 180;   //Servo 9
+int chargebayDoorClose = 310;  //Servo 9
+
+//Pie Open and Close positions for the Dome Servos
+
+int pie1Open = 420;   //Servo 2 (dome board)
+int pie1Close = 180;  //Servo 2 (dome board)
+
+int pie2Open = 420;   //Servo 3 (dome board)
+int pie2Close = 180;  //Servo 3 (dome board)
+
+int pie3Open = 420;   //Servo 6 (dome board)
+int pie3Close = 180;  //Servo 6 (dome board)
+
+int pie4Open = 420;   //Servo 7 (dome board)
+int pie4Close = 180;  //Servo 7 (dome board)
+
+// Dome Panel Posistions
+// Will have to remap these to the actual servo positions
+
+int domepanel1Open = 420;   //Servo 2 (dome board)
+int domepanel1Close = 180;  //Servo 2 (dome board)
+
+int domepanel2Open = 420;   //Servo 3 (dome board)
+int domepanel2Close = 180;  //Servo 3 (dome board)
+
+int domepanel3Open = 420;   //Servo 6 (dome board)
+int domepanel3Close = 180;  //Servo 6 (dome board)
+
+int domepanel4Open = 420;   //Servo 7 (dome board)
+int domepanel4Close = 180;  //Servo 7 (dome board)
+
+int domepanel5Open = 420;   //Servo 3 (dome board)
+int domepanel5Close = 180;  //Servo 3 (dome board)
+
+int domepanel6Open = 420;   //Servo 6 (dome board)
+int domepanel6Close = 180;  //Servo 6 (dome board)
+
+int domepanel7Open = 420;   //Servo 7 (dome board)
+int domepanel7Close = 180;  //Servo 7 (dome board)
+
+int domepanel8Open = 420;   //Servo 2 (dome board)
+int domepanel8Close = 180;  //Servo 2 (dome board)
+
+int domepanel9Open = 420;   //Servo 3 (dome board)
+int domepanel9Close = 180;  //Servo 3 (dome board)
+
+int domepanel10Open = 420;   //Servo 6 (dome board)
+int domepanel10Close = 180;  //Servo 6 (dome board)
+
+int domepanel11Open = 420;   //Servo 7 (dome board)
+int domepanel11Close = 180;  //Servo 7 (dome board)
+
+int domepanel12Open = 420;   //Servo 7 (dome board)
+int domepanel12Close = 180;  //Servo 7 (dome board)
+
+int domepanel13Open = 420;   //Servo 7 (dome board)
+int domepanel13Close = 180;  //Servo 7 (dome board)
 
 
 /////////////////////////////////////////////////////////////////
@@ -165,23 +267,72 @@ ButtonEnum hpLightToggleButton;
 
 boolean isHPOn = false;
 
-//Use DYPlayer instead of MP3Trigger
+/*
+//MB: Holoprojector amimaton variables...
+//TODO: Add holoprojector movements
+
+int HoloAni1a = 0;     //Holo animation counter
+int HoloAni1b = 0;     //Holo animation counter 2
+int HoloPWMstart = 0;  //Holo PWM starting postion (0, 4, 8 are the three holoprojectors)
+
+//Holo home position
+
+int Holo1_1 = 400;
+int Holo2_1 = 415;
+
+//Holo position 1
+
+int Holo1_2 = 300;
+int Holo2_2 = 425;
+
+//Holo position 2
+
+int Holo1_3 = 300;
+int Holo2_3 = 300;
+
+//Holo position 3
+
+int Holo1_4 = 500;
+int Holo2_4 = 400;
+
+//Holo position 4
+
+int Holo1_5 = 420;
+int Holo2_5 = 530;
+*/
+//MB: Gripperarm amimaton variables...
+
+int GripperAni1a = 0;  //Gripper animation counter
+int InterAni1a = 0;    //Interface Animation counter
+
+//Use DYPlayer instead of MP3Trigger. Change to false to use MP3Trigger instead
 boolean UseDYPlayer = true;
+
+int busyPinstate;
 
 
 DYPlayer dyPlayer;
 
-//else{
 MP3Trigger mp3Trigger;
-//}
+
+
 USB Usb;
 XBOXRECV Xbox(&Usb);
 
 void setup() {
   Serial1.begin(SABERTOOTHBAUDRATE);
   Serial2.begin(DOMEBAUDRATE);
-  //Debugging 
-  //Serial.begin(115200);
+  //Astropixels Serial
+  Serial3.begin(9600);
+
+  // Busy pin for DYPlayer
+  pinMode(DYBUSYPIN, INPUT);
+
+  //start pwn for servos
+  pwm1.begin();
+  pwm1.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
+  pwm2.begin();
+  pwm2.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
 
 #if defined(SYRENSIMPLE)
   Syren10.motor(0);
@@ -210,18 +361,17 @@ void setup() {
 
   pinMode(EXTINGUISHERPIN, OUTPUT);
   digitalWrite(EXTINGUISHERPIN, HIGH);
-  if (UseDYPlayer){
+  if (UseDYPlayer) {
     dyPlayer.setup();
     dyPlayer.init();
     dyPlayer.VolumeMid();
-  }
-  else{
+  } else {
     mp3Trigger.setup();
     mp3Trigger.setVolume(vol);
   }
-  
 
-  if(isLeftStickDrive) {
+
+  if (isLeftStickDrive) {
     throttleAxis = LeftHatY;
     turnAxis = LeftHatX;
     domeAxis = RightHatX;
@@ -237,15 +387,17 @@ void setup() {
   }
 
 
- // Start I2C Bus. The body is the master.
+  // Start I2C Bus. The body is the master.
   Wire.begin();
 
   //Serial.begin(115200);
   // Wait for serial port to connect - used on Leonardo, Teensy and other boards with built-in USB CDC serial connection
-  while (!Serial);
+  while (!Serial)
+    ;
   if (Usb.Init() == -1) {
     //Serial.print(F("\r\nOSC did not start"));
-    while (1); //halt
+    while (1)
+      ;  //halt
   }
   //Serial.print(F("\r\nXbox Wireless Receiver Library Started"));
 }
@@ -263,23 +415,30 @@ void loop() {
     firstLoadOnConnect = false;
     return;
   }
+  // Check if anything is playing, probably introduces race conditions reading once here, but shouldn't be too big of a deal
+  busyPinstate = digitalRead(DYBUSYPIN);
 
   // After the controller connects, Blink all the LEDs so we know drives are disengaged at start
   if (!firstLoadOnConnect) {
     firstLoadOnConnect = true;
 
-    if (UseDYPlayer){
-      dyPlayer.Play(21);
-    }
-    else{
+    if (UseDYPlayer) {
+      if (busyPinstate > 0) {  //nothing playing
+        dyPlayer.Play(21);
+      }
+    } else {
       mp3Trigger.play(21);
     }
-    
+
     Xbox.setLedMode(ROTATING, 0);
   }
-  
+ 
+#if define CHATPAD
+  check_chatpad()
+#endif
+
   if (Xbox.getButtonClick(XBOX, 0)) {
-    if(Xbox.getButtonPress(L1, 0) && Xbox.getButtonPress(R1, 0)){ 
+    if (Xbox.getButtonPress(L1, 0) && Xbox.getButtonPress(R1, 0)) {
       Xbox.disconnect(0);
     }
   }
@@ -289,18 +448,20 @@ void loop() {
     if (isDriveEnabled) {
       isDriveEnabled = false;
       Xbox.setLedMode(ROTATING, 0);
-      if (UseDYPlayer){
-        dyPlayer.Play(53);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(53);
+        }
+      } else {
         mp3Trigger.play(53);
       }
     } else {
       isDriveEnabled = true;
-      if (UseDYPlayer){
-        dyPlayer.Play(52);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(52);
+        }
+      } else {
         mp3Trigger.play(52);
       }
       // //When the drive is enabled, set our LED accordingly to indicate speed
@@ -319,18 +480,20 @@ void loop() {
     if (isInAutomationMode) {
       isInAutomationMode = false;
       automateAction = 0;
-      if (UseDYPlayer){
-        dyPlayer.Play(53);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(53);
+        }
+      } else {
         mp3Trigger.play(53);
       }
     } else {
       isInAutomationMode = true;
-      if (UseDYPlayer){
-        dyPlayer.Play(52);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(52);
+        }
+      } else {
         mp3Trigger.play(52);
       }
     }
@@ -345,10 +508,11 @@ void loop() {
       automateAction = random(1, 5);
 
       if (automateAction > 1) {
-        if (UseDYPlayer){
-          dyPlayer.Play(random(32, 52));
-        }
-        else{
+        if (UseDYPlayer) {
+          if (busyPinstate > 0) {  //nothing playing
+            dyPlayer.Play(random(32, 52));
+          }
+        } else {
           mp3Trigger.play(random(32, 52));
         }
       }
@@ -375,7 +539,7 @@ void loop() {
       }
 
       // sets the mix, max seconds between automation actions - sounds and dome movement
-      automateDelay = random(3,10);
+      automateDelay = random(3, 10);
     }
   }
 
@@ -386,10 +550,11 @@ void loop() {
     if (Xbox.getButtonPress(R1, 0)) {
       if (vol > 0) {
         vol--;
-        if (UseDYPlayer){
-          dyPlayer.VolumeUp();
-        }
-        else{
+        if (UseDYPlayer) {
+          if (busyPinstate > 0) {  //nothing playing
+            dyPlayer.VolumeUp();
+          }
+        } else {
           mp3Trigger.setVolume(vol);
         }
       }
@@ -400,13 +565,20 @@ void loop() {
     if (Xbox.getButtonPress(R1, 0)) {
       if (vol < 255) {
         vol++;
-        if (UseDYPlayer){
-          dyPlayer.VolumeDown();
-        }
-        else{
+        if (UseDYPlayer) {
+          if (busyPinstate > 0) {  //nothing playing
+            dyPlayer.VolumeDown();
+          }
+        } else {
           mp3Trigger.setVolume(vol);
         }
       }
+    }
+  }
+  if (Xbox.getButtonClick(RIGHT, 0)) {
+    // Stop Playing on DYPlayer
+    if (Xbox.getButtonPress(R1, 0)) {
+      dyPlayer.Stop();
     }
   }
 
@@ -437,43 +609,46 @@ void loop() {
     }
   }
 
-
   // GENERAL SOUND PLAYBACK AND DISPLAY CHANGING
 
   // Y Button and Y combo buttons
   if (Xbox.getButtonClick(Y, 0)) {
     if (Xbox.getButtonPress(L1, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(8);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(8);
+        }
+      } else {
         mp3Trigger.play(8);
       }
       //logic lights, random
       triggerI2C(10, 0);
     } else if (Xbox.getButtonPress(L2, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(2);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(2);
+        }
+      } else {
         mp3Trigger.play(2);
       }
       //logic lights, random
       triggerI2C(10, 0);
     } else if (Xbox.getButtonPress(R1, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(9);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(9);
+        }
+      } else {
         mp3Trigger.play(9);
       }
       //logic lights, random
       triggerI2C(10, 0);
     } else {
-      if (UseDYPlayer){
-        dyPlayer.Play(random(13, 17));
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(random(13, 17));
+        }
+      } else {
         mp3Trigger.play(random(13, 17));
       }
       //logic lights, random
@@ -484,45 +659,51 @@ void loop() {
   // A Button and A combo Buttons
   if (Xbox.getButtonClick(A, 0)) {
     if (Xbox.getButtonPress(L1, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(6);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(6);
+        }
+      } else {
         mp3Trigger.play(6);
       }
       //logic lights
       triggerI2C(10, 6);
+      astroPixelsSend("@APLE20005");
       // HPEvent 11 - SystemFailure - I2C
       triggerI2C(25, 11);
       triggerI2C(26, 11);
       triggerI2C(27, 11);
     } else if (Xbox.getButtonPress(L2, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(1);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(1);
+        }
+      } else {
         mp3Trigger.play(1);
       }
       //logic lights, alarm
       triggerI2C(10, 1);
+      astroPixelsSend("@APLE10505");
       //  HPEvent 3 - alarm - I2C
       triggerI2C(25, 3);
       triggerI2C(26, 3);
       triggerI2C(27, 3);
     } else if (Xbox.getButtonPress(R1, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(11);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(11);
+        }
+      } else {
         mp3Trigger.play(11);
       }
       //logic lights, alarm2Display
       triggerI2C(10, 11);
     } else {
-      if (UseDYPlayer){
-        dyPlayer.Play(random(17, 25));
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(random(17, 25));
+        }
+      } else {
         mp3Trigger.play(random(17, 25));
       }
       //logic lights, random
@@ -533,28 +714,31 @@ void loop() {
   // B Button and B combo Buttons
   if (Xbox.getButtonClick(B, 0)) {
     if (Xbox.getButtonPress(L1, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(7);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(7);
+        }
+      } else {
         mp3Trigger.play(7);
       }
       //logic lights, random
       triggerI2C(10, 0);
     } else if (Xbox.getButtonPress(L2, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(3);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(3);
+        }
+      } else {
         mp3Trigger.play(3);
       }
       //logic lights, random
       triggerI2C(10, 0);
     } else if (Xbox.getButtonPress(R1, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(10);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(10);
+        }
+      } else {
         mp3Trigger.play(10);
       }
       //logic lights bargrap
@@ -564,10 +748,11 @@ void loop() {
       triggerI2C(26, 10);
       triggerI2C(27, 10);
     } else {
-      if (UseDYPlayer){
-        dyPlayer.Play(random(32, 52));
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(random(32, 52));
+        }
+      } else {
         mp3Trigger.play(random(32, 52));
       }
       //logic lights, random
@@ -579,21 +764,24 @@ void loop() {
   if (Xbox.getButtonClick(X, 0)) {
     // leia message L1+X
     if (Xbox.getButtonPress(L1, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(5);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(5);
+        }
+      } else {
         mp3Trigger.play(5);
       }
       //logic lights, leia message
       triggerI2C(10, 5);
+      astroPixelsSend("@APLE30000"); //Send leia sequence to astropixels
       // Front HPEvent 1 - HoloMessage - I2C -leia message
       triggerI2C(25, 9);
     } else if (Xbox.getButtonPress(L2, 0)) {
-      if (UseDYPlayer){
-        dyPlayer.Play(4);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(4);
+        }
+      } else {
         mp3Trigger.play(4);
       }
       //logic lights
@@ -603,10 +791,11 @@ void loop() {
       //logic lights, random
       triggerI2C(10, 0);
     } else {
-      if (UseDYPlayer){
-        dyPlayer.Play(random(25, 32));
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(random(25, 32));
+        }
+      } else {
         mp3Trigger.play(random(25, 32));
       }
       //logic lights, random
@@ -616,7 +805,7 @@ void loop() {
 
   // turn hp light on & off with Right Analog Stick Press (R3) for left stick drive mode
   // turn hp light on & off with Left Analog Stick Press (L3) for right stick drive mode
-  if (Xbox.getButtonClick(hpLightToggleButton, 0))  {
+  if (Xbox.getButtonClick(hpLightToggleButton, 0)) {
     // if hp light is on, turn it off
     if (isHPOn) {
       isHPOn = false;
@@ -642,10 +831,9 @@ void loop() {
       //change to medium speed and play sound 3-tone
       drivespeed = DRIVESPEED2;
       Xbox.setLedOn(LED2, 0);
-      if (UseDYPlayer){
+      if (UseDYPlayer) {
         dyPlayer.Play(53);
-      }
-      else{
+      } else {
         mp3Trigger.play(53);
       }
       triggerI2C(10, 22);
@@ -653,10 +841,11 @@ void loop() {
       //change to high speed and play sound scream
       drivespeed = DRIVESPEED3;
       Xbox.setLedOn(LED3, 0);
-      if (UseDYPlayer){
-        dyPlayer.Play(1);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(1);
+        }
+      } else {
         mp3Trigger.play(1);
       }
       triggerI2C(10, 23);
@@ -665,10 +854,11 @@ void loop() {
       //change to low speed and play sound 2-tone
       drivespeed = DRIVESPEED1;
       Xbox.setLedOn(LED1, 0);
-      if (UseDYPlayer){
-        dyPlayer.Play(52);
-      }
-      else{
+      if (UseDYPlayer) {
+        if (busyPinstate > 0) {  //nothing playing
+          dyPlayer.Play(52);
+        }
+      } else {
         mp3Trigger.play(52);
       }
       triggerI2C(10, 21);
@@ -676,7 +866,7 @@ void loop() {
   }
 
 
- 
+
   // FOOT DRIVES
   // Xbox 360 analog stick values are signed 16 bit integer value
   // Sabertooth runs at 8 bit signed. -127 to 127 for speed (full speed reverse and  full speed forward)
@@ -687,13 +877,13 @@ void loop() {
     driveThrottle = 0;
   } else {
     if (driveThrottle < throttleStickValue) {
-      if (throttleStickValue - driveThrottle < (RAMPING + 1) ) {
+      if (throttleStickValue - driveThrottle < (RAMPING + 1)) {
         driveThrottle += RAMPING;
       } else {
         driveThrottle = throttleStickValue;
       }
     } else if (driveThrottle > throttleStickValue) {
-      if (driveThrottle - throttleStickValue < (RAMPING + 1) ) {
+      if (driveThrottle - throttleStickValue < (RAMPING + 1)) {
         driveThrottle -= RAMPING;
       } else {
         driveThrottle = throttleStickValue;
@@ -722,13 +912,300 @@ void loop() {
     //stick in dead zone - don't spin dome
     domeThrottle = 0;
   }
-  
+
 
   Syren10.motor(1, domeThrottle);
-} // END loop()
+
+  if (InterAni1a > 0)  //Check to see if the animation loop has started
+  {
+    InterAni1a--;
+    interfaceAnimation(InterAni1a);
+  }
+
+  if (GripperAni1a > 0)  //Check to see if the animation loop has started
+  {
+    GripperAni1a--;
+    gripperArmAnimation(GripperAni1a);
+  }
+  
+
+
+  //Holprojector animation loop
+  // TODO: going to have to redo this for astropixels 
+  /*
+  if (HoloAni1a > 0)  //Check to see if the animation loop has started
+  {
+    HoloAni1a--;
+
+    if (HoloAni1a < 2)  //Return to home
+    {
+      pwm2.setPWM(HoloPWMstart + 2, 0, 0);        // lights off
+      pwm2.setPWM(HoloPWMstart + 3, 0, 0);        //lights off
+      pwm2.setPWM(HoloPWMstart, 0, Holo1_1);      //Servo1 home
+      pwm2.setPWM(HoloPWMstart + 1, 0, Holo2_1);  //Servo2 home
+
+    }
+
+    else if (HoloAni1a < 100)  // Event 4
+    {
+      pwm2.setPWM(HoloPWMstart, 0, Holo1_2);      //Servo1
+      pwm2.setPWM(HoloPWMstart + 1, 0, Holo2_2);  //Servo2
+    }
+
+    else if (HoloAni1a < 800)  // Event 4
+    {
+      pwm2.setPWM(HoloPWMstart, 0, Holo1_1);      //Servo1
+      pwm2.setPWM(HoloPWMstart + 1, 0, Holo2_1);  //Servo2
+    }
+
+    else if (HoloAni1a < 850)  //Event 3
+    {
+      pwm2.setPWM(HoloPWMstart, 0, Holo1_3);      //Servo1
+      pwm2.setPWM(HoloPWMstart + 1, 0, Holo2_3);  //Servo2
+    }
+
+    else if (HoloAni1a < 900)  //Event 2
+    {
+      pwm2.setPWM(HoloPWMstart, 0, Holo1_4);      //Servo1
+      pwm2.setPWM(HoloPWMstart + 1, 0, Holo2_4);  //Servo2
+    }
+
+    else if (HoloAni1a < 980)  //Event 1
+    {
+      pwm2.setPWM(HoloPWMstart + 2, 0, 4095);  // lights on
+      pwm2.setPWM(HoloPWMstart + 3, 0, 4095);  //lights on
+    }
+  }
+  */
+}  // END loop()
 
 void triggerI2C(byte deviceID, byte eventID) {
   Wire.beginTransmission(deviceID);
   Wire.write(eventID);
   Wire.endTransmission();
+}
+
+void astroPixelsSend(byte command) {
+  Serial3.write(command);
+}
+
+void interfaceAnimation(int InterAni){
+  //Interface Arm Animation
+
+  switch (InterAni) {
+    case 900:
+      pwm1.setPWM(0, 0, LeftDoorOpen);
+      break;
+    case 800:
+      pwm1.setPWM(6, 0, InterArmOut);
+      break;
+    case 700:
+      pwm1.setPWM(7, 0, InterOut);
+      break;
+    case 600:
+      pwm1.setPWM(7, 0, InterIn);
+      break;
+    case 500:
+      pwm1.setPWM(7, 0, InterOut);
+      break;
+    case 400:
+      pwm1.setPWM(7, 0, InterIn);
+      break;
+    case 150:
+      pwm1.setPWM(6, 0, InterArmIn);
+      break;
+    case 2:
+      pwm1.setPWM(0, 0, LeftDoorClose);
+      break;
+    default:
+      // Do Nothing in between animation timings
+      break;
+  }
+}
+
+void gripperArmAnimation(int GripperAni){
+  //Gripper Arm Animation
+  // Use a counter for the animation timings, crude and relies on clockspeed but works well enough 
+
+  switch (GripperAni) {
+    case 900:
+      pwm1.setPWM(1, 0, RightDoorOpen); //Door Open
+      break;
+    case 800:
+      pwm1.setPWM(2, 0, GripperArmOut); //Arm Out
+      break;
+    case 700:
+      pwm1.setPWM(3, 0, GripperOpen); //Arm Gripper Open
+      break;
+    case 600:
+      pwm1.setPWM(3, 0, GripperClose); //Arm Gripper Close
+      break;
+    case 500:
+      pwm1.setPWM(3, 0, GripperOpen); //Arm Gripper Open
+      break;
+    case 400:
+      pwm1.setPWM(3, 0, GripperClose); //Arm Gripper Close
+      break;
+    case 150:
+      pwm1.setPWM(2, 0, GripperArmIn); //Arm in
+      break;
+    case 2:
+      pwm1.setPWM(1, 0, RightDoorClose); //Close the door
+      break;
+    default:
+      // Do Nothing in between animation timings
+      break;
+  }
+}
+
+void Check_Chatpad() {
+ 
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_D2, 0)) {
+      //Theme
+      dyPlayer.Play(9); // Star Wars Theme 5m 29s
+  }  
+
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_D3, 0)) {
+    //Imperial March
+    dyPlayer.Play(11); // Imperial March 3m 5s
+    astroPixelsSend("@APLE40500");
+  }  
+  
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_D4, 0)) {
+    //Cantina
+    dyPlayer.Play(10); // Cantina 2m 50s
+  }  
+
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_D9, 0)) {
+    // Annoyed
+    dyPlayer.Play(8); // Annoyed
+  }  
+
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_D0, 0)) {
+    //Chatty
+    dyPlayer.Play(random(25,29)); // Chatty Random sounds
+  }  
+
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_W, 0)) {
+    //WolfWhistle
+    dyPlayer.Play(4); // Wolf whistle
+  }
+
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_O, 0)) {
+    //scream
+    dyPlayer.Play(1); // Scream
+  }
+/*
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_D, 0)) {
+      //DOODOO
+      dyPlayer.Play(3); // DOODOO
+  }
+*/   
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_L, 0)) {
+    dyPlayer.Play(5); // Leia Long 35s
+  }
+
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_X, 0)) {
+      //shortcircuit
+    dyPlayer.Play(13); // Short Circuit
+  }
+  /*
+
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_C, 0)) {
+      //Chortle
+      dyPlayer.Play(2); // Chortle
+  }
+  */
+
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_U, 0)) {
+      // Utility Arms Open/Close
+      //dyPlayer.Play(2); // Chortle
+  }
+  //start Interface Arm animation when pressing I
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_I, 0)) {
+      // Interface Animation
+      InterAni1a = 1000;
+  }
+  //start gripper animation when pressing G
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_G, 0)) {
+      // Gripper Animation
+      GripperAni1a = 1000;
+  }
+
+//Use "SPACE" to stop music and return to random lights
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_SPACE, 0)) {
+      //Stop music tracks
+      dyPlayer.Stop();
+  }
+
+  //PCA9685 controls
+
+  //start movement UTIL to upper or lower when pressing U
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_U, 0)) {
+    //ChatPad U - Open util arms
+    pwm1.setPWM(5, 0, UpperUtilIn);
+    pwm1.setPWM(4, 0, LowerUtilIn);
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      pwm1.setPWM(5, 0, UpperUtilOut);
+      pwm1.setPWM(4, 0, LowerUtilOut);
+    }
+  }
+  /*
+  //L1+Right - close all
+  if (Xbox.getButtonPress(RIGHT, 0)) {
+
+    pwm1.setPWM(5, 0, UpperUtilOut);
+    pwm1.setPWM(4, 0, LowerUtilOut);
+    pwm1.setPWM(9, 0, chargebayDoorClose);
+    pwm1.setPWM(8, 0, dataportDoorClose);
+    pwm2.setPWM(2, 0, pie1Close);
+    pwm2.setPWM(3, 0, pie2Close);
+    pwm2.setPWM(6, 0, pie3Close);
+    pwm2.setPWM(7, 0, pie4Close);
+  }
+  */
+
+  //Open Dataport with D, shut with shift D
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_D, 0)) {
+    pwm1.setPWM(8, 0, dataportDoorOpen);
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      pwm1.setPWM(8, 0, dataportDoorClose);
+    }
+  }
+
+  //Open Chagebay with C, close with shift C
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_C, 0)) {
+    pwm1.setPWM(9, 0, chargebayDoorOpen);
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      pwm1.setPWM(9, 0, chargebayDoorClose);
+    }
+  }
+
+  //Open all Dome pies (1,2,3,4) with P, shut with shift P
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_P, 0)) {
+    pwm2.setPWM(2, 0, pie1Open);
+    pwm2.setPWM(3, 0, pie2Open);
+    pwm2.setPWM(6, 0, pie3Open);
+    pwm2.setPWM(7, 0, pie4Open);
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      pwm2.setPWM(2, 0, pie1Close);
+      pwm2.setPWM(3, 0, pie2Close);
+      pwm2.setPWM(6, 0, pie3Close);
+      pwm2.setPWM(7, 0, pie4Close);
+    }
+  }
+
+  //HoloProjector1,2 and 3 animation
+  /*
+  if (Xbox.getButtonPress(LEFT, 0)) {
+
+    if (Xbox.getButtonPress(R1, 0)) {
+      HoloPWMstart = 0;
+      HoloPWMstart = 4;
+      HoloPWMstart = 8;
+      HoloAni1a = 1000;
+    }
+  }
+  */
+ 
 }
