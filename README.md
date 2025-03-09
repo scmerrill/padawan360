@@ -256,7 +256,7 @@ For anyone with an older version of the MP3Trigger board, you may need to upgrad
 ### PCA9685 Servo Controller
   This sketch is also updated to support the PCA9685 servo controller. It is set up for 2 currently: one for the body servos and one for the dome. I will likely expand this to include 3 of these controllers for full dome servo support (2 each for the HPs, all dome panels, and pie panels, plus any other accessories such as fire extiguisher and dome lifter). There are basic animations included, but they are not the most robust, but works well for basic control for a low cost.
 
-  Wiring for these boards can be seen below. Also be sure to solder the address jumper on the additional boards. See [this article](https://learn.adafruit.com/16-channel-pwm-servo-driver/chaining-drivers) for more info.
+  Wiring for these boards can be seen below. Also be sure to solder the address jumper on the additional boards. 2 boards should be 0x40 and 0x41 (0x40 for the body and 0x41 for the dome). See [this article](https://learn.adafruit.com/16-channel-pwm-servo-driver/chaining-drivers) for more info. 
 
   | PCA9685-2 Pin   | PCA9685-1 Pin   | Arduino Mega |
   | -----------     | --------------- | -----------  |
