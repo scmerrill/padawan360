@@ -18,11 +18,13 @@ The R2/Droid Builders have a long history of raising money for groups like [Make
   - [USB Shield](#usb-shield)
   - [Xbox 360 Wireless USB Receiver](#xbox-360-wireless-usb-receiver)
   - [Xbox 360 Wireless Controller](#xbox-360-wireless-controller)
-  - [Sound Board](#sound-board)
+  - [Sound Board](#sound-board) 
+  - [PCA9685](#pca9685-servo-controller)
   - [Sabertooth Motor Controller - Feet](#sabertooth-motor-controller---feet)
   - [Syren Motor Controller - Dome](#syren-motor-controller---dome)
   - [Amp and Speakers](#amp-and-speakers)
   - [Teeces lights](#teeces-lights)
+  - [Astropixels](#astropixels)
     - [Optional](#optional)
       - [RSeries RGB HPs.](#rseries-rgb-hps)
       - [Slipring](#slipring)
@@ -30,6 +32,8 @@ The R2/Droid Builders have a long history of raising money for groups like [Make
   - [Arduino IDE](#arduino-ide)
   - [USB Shield](#usb-shield-1)
   - [Sound](#sound)
+  - [Astropixels](#astropixels-1)
+  - [PCA9685](#pca9685-servo-controller-1)
   - [Dome](#dome)
     - [Option 1](#option-1)
     - [Option 2 (Best Option)](#option-2--best-option-)
@@ -263,7 +267,7 @@ For anyone with an older version of the MP3Trigger board, you may need to upgrad
   | VCC             | VCC             |              |
   | GND             | GND             |              |
 
-  ![alt text](image-1.png)
+  ![PCA_Wiring](https://github.com/scmerrill/padawan360/blob/pca9685/pca9685_wiring.png)
 
 
 ### Dome
