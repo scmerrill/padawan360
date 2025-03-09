@@ -242,14 +242,16 @@ For anyone with an older version of the MP3Trigger board, you may need to upgrad
 
   This sketch is updated to support some astropixel commands. These can be customized to be just about anything, but there is a few default ones included in this sketch. If you want to do custom lighting animations and sequences, you can look into the documentation [here](https://github.com/reeltwo/AstroPixelsPlus). Basically you just call the astroPixelsSend() function with the sequence e.g. `astroPixelsSend("@APLE30000")`
 
-  In order for this to work, astropixels TTLSerial2 should be hooked up to serial3 (Pins 14, 15) on the mega (remember tx goes to rx and vice versa). See the wiring below. Remember it must be hooked up to Serial2 on the AstroPixels
+  In order for this to work, astropixels TTLSerial2 should be hooked up to serial3 (Pins 14, 15) on the mega (remember tx goes to rx and vice versa). See the wiring below. Remember it must be hooked up to Serial2 on the AstroPixels.
 
-  | AstroPixels     | Arduino Mega  |
-  | --------------- | -----------   |
-  | T               | 14 (RX3)      |
-  | R               | 15 (TX0)      |
-  | V (Optional)    | 5v (Optional) |
-  | G               | GND           |
+  The 5v is optional, and as long as you have a common ground between the AstroPixels and the Arduino you shouldn't need to hook it up directly to the Mega.
+
+  | AstroPixels     | Arduino Mega   |
+  | --------------- | -----------    |
+  | T               | 14 (RX3)       |
+  | R               | 15 (TX0)       |
+  | V (Optional)    | 5v (Optional)  |
+  | G (Optional)    | GND (Optional) |
 
 ### PCA9685 Servo Controller
   This sketch is also updated to support the PCA9685 servo controller. It is set up for 2 currently: one for the body servos and one for the dome. I will likely expand this to include 3 of these controllers for full dome servo support (2 each for the HPs, all dome panels, and pie panels, plus any other accessories such as fire extiguisher and dome lifter). There are basic animations included, but they are not the most robust, but works well for basic control for a low cost.
