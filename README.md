@@ -1,5 +1,33 @@
 # Padawan360
 
+## Changes and Version bumping
+Since it's release, padawan360 has been a great option for droid builders everywhere. Dan Kraus and before him DanF have been great in providing this code and making it accessible. However over the years standard components and electronics have become cheaper, and changed and there are more and more alternatives. Because of this it has been modified and changed over the years by individual droid builders. Every droid is different and is built with different components and this is my take on the components. I have added several things andd swapped out some parts for cheaper ones but the base code remains, and for good reason: it is pretty solid and robust, but the base code doesn't get updated very often.
+
+So this is my versioning of the code and becasuse of the significant changes I figured it's probably time for a version bump. Because a lot of the base cod eis still the same just with lots of additions and customizing I think it is fitting. I may end up generalizing this code and making a PR to the main repo, but over the years I feel that repo and code has gotten a little messy and needs to be cleaned up a little. I do understand that because it is meant to be accessible to as many people as possible there is good reason for this, but pretty much every original sketch hasn't been touched in 10 years except the body arduino mega code so that is the only code here.
+
+This is why I have mainly chosen to keep this repo seperate from the main repo but it is hard to cater to a wide audience when there is so much variation in builds. I will include the hardware I use as that is what this code is written for. 
+
+As a last note I just want to say that one of the great joys of droid building is learning new skills and researching and customizing your droid. Because of this, it is hard to say that this code will work for everyone unless you get the exact components. This is why it is so hard to make genric code that works for everyone. I have modified this readme to reflect my choices, but this doesnt mean these are the only choices or that they are the best choices.
+
+Finally I just wanted to list some of the changes I have made to this code up at the top for new builders to decide if this is the route they want to go
+
+v2.2 Changes:
+- Added options to use DY Player or the MP3 Trigger
+- Added Maestro support
+- Added chatpad support 
+- Added hall effect sensor to home the dome
+- Added AstroPixels control over serial - Currently a work in progress
+
+
+Hardware:
+***Arduino Mega 2560 ADK***
+Microsoft Xbox 360 Controller
+Xbox 360 Chatpad
+Xbox 360 USB Wireless Reciver
+Sabertooth Motor Controller
+Syren Motor Controller
+Sparkfun MP3 Trigger or DY-SV5W sound board
+
 ## Donations
 
 Instead of offering to buy me a beer at the next convention, please consider making a donation to [Make-a-Wish](https://wish.org/), your local foodbank, or other local charity that helps kids in need. Drop me a note saying you did and I'll be grateful. We spend quite a bit of money on this hobby and even if you plan on doing some charitable events with your droid in the future, please set aside a few dollars and send a few dollars and put it to an immediate good. if you're embarking on a project like this, you have a few bucks to spare.
@@ -58,7 +86,7 @@ The R2/Droid Builders have a long history of raising money for groups like [Make
 
 ## Intro
 
-This is a control system for 1:1 scale remote control R2-D2 powered by Arduinos and controlled with an Xbox 360 Controller. It triggers lights, sounds, and controls foot drive and dome drive motors. It also supports I2C to trigger events in the dome lights or can be extended to interact with anything else that supports I2C
+This is a control system for 1:1 scale remote control R2-D2 powered by Arduinos and controlled with an Xbox 360 Controller. It triggers lights, sounds, and controls foot drive and dome drive motors. It also supports astropixels and 
 
 These sketches are heavily based on DanF's Padawan control system that uses Playstation 2 controllers. I found the PS2 controllers to become a bit unreliable and they are increasingly more difficult to come by. I'm also taking advantage of the LEDs around the center Guide button to indicate state of the drive mode (disengaged, engaged w/ speed setting).
 
@@ -80,13 +108,13 @@ There are quite a few forks either on GitHub, circulating around via email attac
 
 ## Components
 
-- ### Arduino Mega (Option 1 and Recommended!)
+- ### Arduino Mega ADK (Option 1 and Recommended!)
 
-I run a Mega for the body. It uses the hardware serial pins to connect to the motor controllers. Better performance and memory utilization. The Mega has more memory available too so there's more room to expand and do more if you want. With the Mega, I can also support I2C a bit better. I tend to make tweaks to improve readability here more than the Uno as I run a Mega in my droid. It's more performant than the Uno.
+I run a Mega ADK for the body. It uses the hardware serial pins to connect to the motor controllers. Better performance and memory utilization. The Mega has more memory available too so there's more room to expand and do more if you want. With the Mega ADK's built in USB it makes life much easier than dealing with a USB shield and getting that to work since arduinos can be very picky about the shield used. They are pretty readily available and cheap from Amazon and AliExpress
 
-- ### Arduino Uno (Option 2)
+- ### Arduino Mega (Option 2)
 
-For the body. Main Arduino that runs everything. Receivers, code, connection to MP3 trigger, etc runs through here. SparkFun, RadioShack, Amazon, you can find these everywhere these days.
+A basic Arduino Mega can also be used with a USB Shield (see below). Technically this can also be used with an Uno but I really do not recommend that. Getting an Arduino Mega ADK is likely going to be the best choice to avoid any headaches. 
 
 - ### USB Shield
 
@@ -96,13 +124,19 @@ For the body. Main Arduino that runs everything. Receivers, code, connection to 
 
 Your USB Shield may need voltage pins jumped. See Steve Baudain's YouTube video here walking through it: https://www.youtube.com/watch?v=y9HEeBO3cV0
 
+Because of all thes caveats and issues with sourcing the correct USB shield, I highly recommend just getting an ADK board
+
 - ### Xbox 360 Wireless USB Receiver
 
   You may be able to source this from Best Buy, GameStop, or something local. It's available on [New Egg](https://www.newegg.com/p/pl?d=microsoft+xbox+360+usb+receiver).
 
-  I bought a generic one from Microcenter that works fine. Some users have gotten cheap ones from Ebay or other non-official/off-brands that did not function. I highly recommend buying 1st party official Microsoft receiver. Your mileage may vary with off-brand components here. If you are having problems pairing, and you've gone through the troubleshooting steps and you are not using an official receiver, it's likely the culprit.
+  I personally use a genuine Microsoft one. eBay may be a good option for this nowadays but I haven't looked in a while. 
+
+  Others have bought generic ones from Microcenter that work fine. Some users have gotten cheap ones from Ebay or other non-official/off-brands that did not function. I highly recommend buying 1st party official Microsoft receiver. Your mileage may vary with off-brand components here. If you are having problems pairing, and you've gone through the troubleshooting steps and you are not using an official receiver, it's likely the culprit.
 
 Some people have had luck making some adjustments to get some 3rd Party receivers working. Your mileage may vary so try to obtain first party first. Read up on it here: https://astromech.net/droidwiki/Cheap_XBox_Receivers
+
+I also am planning on working on support for an XBox One controller as they are much more available nowadays but I havent had the time to look into that super in depth yet. I will update this repo once I make progress on that
 
 - ### Xbox 360 Wireless Controller
 
@@ -111,6 +145,9 @@ Some people have had luck making some adjustments to get some 3rd Party receiver
   **Note:** I have seen the controller bundled with the USB receiver together. It was in the gaming peripheals department in my local Microcenter. It's marketed for PC gaming. Nice to get it in one package if you can if you don't have an extra 360 controller to spare.
 
   I also use a chatpad with my controller for more button combination options.
+
+  I also am planning on working on support for an XBox One controller as they are much more available nowadays but I havent had the time to look into that super in depth yet. I will update this repo once I make progress on that
+
 
 - ### Sound Board
   With this code you have two options:
@@ -121,15 +158,17 @@ Some people have had luck making some adjustments to get some 3rd Party receiver
 
   [Sourced from SparkFun](https://www.sparkfun.com/products/11029). 
   
-  No matter which you go with, be sure to get a microSD card too. Nothing too big, it's just MP3s (1GB is plenty).
+  No matter which you go with, be sure to get a microSD card too. Nothing too big, it's just MP3s (1GB is plenty). Some others have actually reported that higher sizes have issues, so try to keep it below 32GB to be sure to avoid any issues. 
 
 - ### PCA9685 Servo Controller
-  This sketch is also updated to support the PCA9685 servo controller. It is set up for 2 currently: one for the body servos and one for the dome. I will likely expand this to include 3 of these controllers for full dome servo support (2 each for the HPs, all dome panels, and pie panels, plus any other accessories such as fire extiguisher and dome lifter). There are basic animations included, but they are not the most robust, but works well for basic control for a low cost. These can be sourced cheaply from Amazon.
+This current sketch removed the PCA9685 support since I switched to a Maestro for ease of creating sequences. If you are interested in using this, there is another branch on this repo with that code.
 
 
 - ### Sabertooth Motor Controller - Feet
 
   Depending on your motors you'll want a [Sabertooth 2x32](https://www.dimensionengineering.com/products/sabertooth2x32), [Sabertooth 2x25](https://www.dimensionengineering.com/products/sabertooth2x25) or [2x12](https://www.dimensionengineering.com/products/sabertooth2x12). The 2x32 and the 2x24 seem to be crossing over price point. Might as well get the 2x32 if you're buying brand new. There's some additional bells and whistles in the 32 and can be programmed via Dimension Engineering's software, but some of those usefuls features are handled in the code, like for speed Ramping for example. My styrene droid with Jaycar motors uses 2x12. Most people tend to use 2x25 or 2x32 for scooter motors and NPC motors. Consult with Dimension Engineering to make sure you get the right one you need. Either one will work with the code
+
+  These are still pretty much the gold standard for droid motor controllers and they are very reliable. I may look into using brushless hob motors and controllers in the future, and will update the repo if I end up going that route. 
 
 - ### Syren Motor Controller - Dome
 
@@ -137,15 +176,23 @@ Some people have had luck making some adjustments to get some 3rd Party receiver
 
 - ### Amp and Speakers
 
-  Up to you and how big and loud you want. I have a small speaker and a $20 amp from Pyle. A ground loop isolator might be necessary to protect the MP3 trigger and eliminate buzzing from the speaker.
-
-- ### Teeces lights
-
-  The sketch provided here will work for version 3 of the Teeces lighting system for Logic Lights. Use the regular setup and installation instructions for the Teeces system. To control brightness and changing the lighting animations that match some scenes from the films (like the flicker pattern during the Leia Message), the Arduino for the Teeces system needs to be connected to the body Arduino via I2C. Connect the I2C pins from the Body Arduino to the Teeces Arduino. SDA->SDA pins and SCL->SCL pins. On the Uno these are A4 and A5 respectively and on the Mega they are 20 and 21. Verify the I2C pins on your Teeces Arduino. These can be connected via a slipring.
+  Up to you and how big and loud you want. I have a small speaker and a $20 amp from Amazon. A ground loop isolator might be necessary to protect the MP3 trigger and eliminate buzzing from the speaker.
 
 - ### AstroPixels
 
   This sketch is updated to support some astropixel commands. It is a low cost alternative to Teeces that uses neopixels. They can be sourced from [we-make-things](https://we-make-things.co.uk/product/astropixels/)
+
+  I recommend these personally but some do not like the look and feel of the led lights. They are also a little dimmer than Teeces, but I find them to be great.
+
+- ### Dome Homing Hall Effect Sensor
+
+  This sketch is updated to include a hall effect sensor so that the dome is able to find home and know where it is relative to this. This gets rid of some of the problems with the dome being off center after a while in automation mode.
+
+  I used a simple A3144 hall effect sensor which is super chear and works great. Just be aware of what sensor you buy as some (like the A3144) are uni-polar which means the magnet does need to be in a specific orientation and if you glue it in wrong the sensor will not work. 
+
+  The sensor is given 5v from either the arduino or power supply, and the signal is wired into pin 4 by default. You can change this if you want in the code. 
+  
+  I modeled a holder for the sensor which I will try to remember to upload and link here. And then I just glued a magnet to the dome ring for sensing. This may or may not work for you depending on where your done ring sits while the droid is facing forward, but it is not too hard to find alternative places to mount the sensor and magnet. 
 
 
 - #### Optional
@@ -168,6 +215,8 @@ Installing libraries and using the Arduino IDE is beyond the scope of this docum
 The DYPlayer library has been added to the libraries folder so be sure to install that library as well
 
 ### USB Shield
+
+If you decided to use a normal Mega and a USB shield, 
 
 Solder the headers on the USB Shield if you purchased the unassembled version. Fit the shield over the Arduino UNO by lining up the pins and pushing in. It should fit snugly. Plug the Xbox 360 Wireless Receiver USB cable into the USB port. That was easy.
 
@@ -240,7 +289,7 @@ For anyone with an older version of the MP3Trigger board, you may need to upgrad
 
   IMPORTANT: In order for this functionality, you MUST have the AstroPixelsPlus firmware installed on your AstroPixels. See [the documentation](https://github.com/reeltwo/AstroPixelsPlus) for more info on this.
 
-  This sketch is updated to support some astropixel commands. These can be customized to be just about anything, but there is a few default ones included in this sketch. If you want to do custom lighting animations and sequences, you can look into the documentation [here](https://github.com/reeltwo/AstroPixelsPlus). Basically you just call the astroPixelsSend() function with the sequence e.g. `astroPixelsSend("@APLE30000")`
+  This sketch is updated to support some astropixel commands. These can be customized to be just about anything, but there is a few default ones included in this sketch. If you want to do custom lighting animations and sequences, you can look into the documentation [here](https://github.com/reeltwo/AstroPixelsPlus).
 
   In order for this to work, astropixels TTLSerial2 should be hooked up to serial3 (Pins 14, 15) on the mega (remember tx goes to rx and vice versa). See the wiring below. Remember it must be hooked up to Serial2 on the AstroPixels.
 
@@ -249,11 +298,15 @@ For anyone with an older version of the MP3Trigger board, you may need to upgrad
   | AstroPixels     | Arduino Mega   |
   | --------------- | -----------    |
   | T               | 15 (RX3)       |
-  | R               | 14 (TX0)       |
+  | R               | 14 (TX3)       |
   | V (Optional)    | 5v (Optional)  |
   | G (Optional)    | GND (Optional) |
 
-### PCA9685 Servo Controller
+
+### Servo Controllers
+This script specifically removed support for the PCA9685 servo controller, but I have left that section in here. If you are interesting in using this servo controller, look at the pca9685 branch in this repo
+
+#### PCA9685 Servo Controller
   This sketch is also updated to support the PCA9685 servo controller. It is set up for 2 currently: one for the body servos and one for the dome. I will likely expand this to include 3 of these controllers for full dome servo support (2 each for the HPs, all dome panels, and pie panels, plus any other accessories such as fire extiguisher and dome lifter). There are basic animations included, but they are not the most robust, but works well for basic control for a low cost.
 
   Wiring for these boards can be seen below. Also be sure to solder the address jumper on the additional boards. 2 boards should be 0x40 and 0x41 (0x40 for the body and 0x41 for the dome). See [this article](https://learn.adafruit.com/16-channel-pwm-servo-driver/chaining-drivers) for more info. 
@@ -270,6 +323,22 @@ For anyone with an older version of the MP3Trigger board, you may need to upgrad
   | GND             | GND             |              |
 
   ![PCA_Wiring](https://github.com/scmerrill/padawan360/blob/pca9685/pca9685_wiring.png)
+
+#### Pololu Maestro
+  I made the decision to switch to 2 Maestros instead. It made it much easier to program the sequences and really was a major time saver. The Maestros are not cheap compared to the PCA9685, but it is worth it to create complex sequences and I suppose there is a good reason why they are always recommended in droid groups. 
+
+  There are many different tutorials on programming the maestro so I wont go too in depth into that. What I will mention is that the sequences will be different for evey droid. Because the limits and positions will vary from servo to servo I recommend getting familiar with the Pololu software and play with it yourself. It ends up being very fun to program those sequences. You will then need to change the sequence numbers in this sketch. For example:
+
+  ```
+  //Open Door B with B
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_B, 0)) {
+    maestro_body.restartScript(21);
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      maestro_body.restartScript(5);
+    }
+  }
+  ```
+  Here my sequence for opening door B is index 21, it will likely be different for you. This is why I recommend looking at tutorials for this. It will make your life easier.
 
 
 ### Dome
@@ -356,19 +425,11 @@ If you're using the 2x32 and you've tinkered with Dimension Engineering's DEScri
 
 If you're using 5v to power some components on your I2C device chain, you can use the 5V terminal on the Sabertooth and connect to the positive I2C pin header on the slipring board and 0V on the Sabertooth to GND on the slipring board.
 
-### Arduino UNO/MEGA
+### Arduino MEGA
 
-Install the libraries from the Libraries folder. Upload the corresponding padawan360_body sketch from the `padawan360_body` folder for your Arduino (UNO or Mega) sketch to the Arduino. There is one for the UNO and one for the Mega.
+Install the libraries from the Libraries folder. Upload the corresponding padawan360_maestro sketch from this `padawan360_maestro` folder for your Arduino (UNO or Mega) sketch to the Arduino. There is one for the UNO and one for the Mega.
 
 Review the sketch as there are some configuration options at the top of the sketch with descriptive comments that you may want to adjust to control speed levels, turn speed,
-
-#### I2C
-
-This is optional. If you want to trigger light effects in the dome via slipring, connect A4 SLC to SLC on the slipring board and A5 SDA on the Arduino to SDA on the slipring board.
-
-Arduino UNO R3 has separate I2C pins which is really nice but the Circuits@Home USB Shield covers them up. The R3 Board still has I2C pins at A4 and A5.
-
-I've had better performance using the Mega with I2C because of using the hardware serial pins.
 
 ### Controller Pairing
 
@@ -379,14 +440,6 @@ There's also the [Xbox Support Guide](http://support.xbox.com/en-US/xbox-on-othe
 ### Options, Configurations, and Settings
 
 Review the top of the Arduino Sketch that you will be uploading to your droid. There are a number of options and configurations that you may need to tune for YOUR droid specifically. Provided are defaults and standard that generally work well but you may find that based on your drive system, power system, and personal preferences you may want to adjust them. The top of the sketch documents each of these settings and provides defaults and includes explanations and descriptions of what each of them does and potential changes you may want to change. Review these carefully.
-
-### Teeces Logics
-
-If you didn't install the libraries in preparation of the body sketch, install the libraries found in the library folder. Upload the padawan360_dome sketch on the Teeces arduino. Connect I2C on the dome end of slipring board. SDA to A4 and SLC to A5.
-
-### HoloProjectors I2C
-
-Mike Erwin put out some great boards with Arduino bootloaders on them. Programmable! I wasn't personally thrilled with some of the lighting effects. I thought some of the colored lights didn't look too authentic. Certainly not entirely fil accurate, but that's ok. Some colored lights didn't really seem to fit random idling and blinking. Using an ISP programmer I tweaked the events more to my liking. Alarms flash yellow and red, otherwise everything else is just white or a cyan color for the Leia message. If you don't want to program them with my versions, you can tweak the `triggerI2C(deviceID, eventNumer)` function calls in the body sketch to match the original event numbers. The originals are found on the RSeries code repo on google code.
 
 ### Video Guide
 
@@ -487,10 +540,6 @@ Orient your controls from the perspective of the droid. Stand behind the droid s
 _**The right analog stick is centered but it still drives(turns, drives forward, drives reverse, etc)!**_
 
 You need to just adjust the deadzone `const byte DRIVEDEADZONERANGE = 20;` Increase this number until you can let the stick go neutral and nothing moves. The sketch has some more info on that above setting that value to adjust for controller stick drift.
-
-## Coming Soon
-
-Dome servos via I2C support.
 
 ## Licensing
 
