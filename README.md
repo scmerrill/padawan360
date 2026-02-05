@@ -20,13 +20,13 @@ v2.2 Changes:
 
 
 Hardware:
-***Arduino Mega 2560 ADK***
-Microsoft Xbox 360 Controller
-Xbox 360 Chatpad
-Xbox 360 USB Wireless Reciver
-Sabertooth Motor Controller
-Syren Motor Controller
-Sparkfun MP3 Trigger or DY-SV5W sound board
+- ***Arduino Mega 2560 ADK***
+- Microsoft Xbox 360 Controller
+- Xbox 360 Chatpad
+- Xbox 360 USB Wireless Reciver
+- Sabertooth Motor Controller
+- Syren Motor Controller
+- Sparkfun MP3 Trigger or DY-SV5W sound board
 
 ## Donations
 
