@@ -1,8 +1,8 @@
 // =======================================================================================
-// /////////////////////////Padawan360 Body Code - Mega I2C v2.0 ////////////////////////////////////
+// /////////////////////////Padawan360 Code - Mega v2.2 ////////////////////////////////////
 // =======================================================================================
 /*
-by Dan Kraus
+Original code by Dan Kraus
 dskraus@gmail.com
 Astromech: danomite4047
 Project Site: https://github.com/dankraus/padawan360/
@@ -16,26 +16,32 @@ support for PS3 and Xbox 360 controllers. Bluetooth dongles were inconsistent as
 so I wanted to be able to have something with parts that other builder's could easily track
 down and buy parts even at your local big box store.
 
-v2.0 Changes:
-- Makes left analog stick default drive control stick. Configurable between left or right stick via isLeftStickDrive 
+v2.2 Changes:
+- Added options to use DY Player over the MP3 Trigger
+- Added Maestro sequences
+- Added chatpad support 
+- Added hall effect sensor to home the dome
+- Added AstroPixels control over serial
+
 
 Hardware:
-***Arduino Mega 2560***
-USB Host Shield from circuits@home
+***Arduino Mega 2560 ADK***
 Microsoft Xbox 360 Controller
+Xbox 360 Chatpad
 Xbox 360 USB Wireless Reciver
 Sabertooth Motor Controller
 Syren Motor Controller
-Sparkfun MP3 Trigger
+Sparkfun MP3 Trigger or DY Player
 
 This sketch supports I2C and calls events on many sound effect actions to control lights and sounds.
 It is NOT set up for Dan's method of using the serial packet to transfer data up to the dome
 to trigger some light effects.It uses Hardware Serial pins on the Mega to control Sabertooth and Syren
 
+If you are using a Li-Ion battery, switch 3 should be down as well. See the Syren10 documentation for more info
+
 Set Sabertooth 2x25/2x12 Dip Switches 1 and 2 Down, All Others Up
-For SyRen Simple Serial Set Switches 1 and 2 Down, All Others Up
+For SyRen Packetized Serial Set Switches 1 and 2 Down, All Others Up (My prefered setup)
 For SyRen Simple Serial Set Switchs 2 & 4 Down, All Others Up
-Placed a 10K ohm resistor between S1 & GND on the SyRen 10 itself
 
 */
 
@@ -58,7 +64,7 @@ byte drivespeed = DRIVESPEED1;
 // the higher this number the faster the droid will spin in place, lower - easier to control.
 // Recommend beginner: 40 to 50, experienced: 50 $ up, I like 70
 // This may vary based on your drive system and power system
-const byte TURNSPEED = 70;
+const byte TURNSPEED = 50;
 
 // Set isLeftStickDrive to true for driving  with the left stick
 // Set isLeftStickDrive to false for driving with the right stick (legacy and original configuration)
@@ -67,7 +73,7 @@ boolean isLeftStickDrive = true;
 // If using a speed controller for the dome, sets the top speed. You'll want to vary it potenitally
 // depending on your motor. My Pittman is really fast so I dial this down a ways from top speed.
 // Use a number up to 127 for serial
-const byte DOMESPEED = 127;
+const byte DOMESPEED = 80;
 
 // Ramping- the lower this number the longer R2 will take to speedup or slow down,
 // change this by incriments of 1
@@ -102,9 +108,9 @@ byte vol = 20;
 
 // Automation Delays
 // set automateDelay to min and max seconds between sounds
-byte automateDelay = random(5, 20);
+byte automateDelay = random(8, 30);
 //How much the dome may turn during automation.
-int turnDirection = 40;
+int turnDirection = 35;
 
 // Pin number to pull a relay high/low to trigger my upside down compressed air like R2's extinguisher
 #define EXTINGUISHERPIN 3
@@ -122,105 +128,50 @@ int turnDirection = 40;
 #include <DYSound.h>
 #include <Adafruit_PWMServoDriver.h>
 
-Adafruit_PWMServoDriver pwm1 = Adafruit_PWMServoDriver(0x40);
-Adafruit_PWMServoDriver pwm2 = Adafruit_PWMServoDriver(0x41);
-uint8_t servonum = 0;
 
-//Door Open and Close positions for the Servos (Breadpan doors)
-//Adjust to match your values for your specific values
-// TODO: adjust these values
+//////////////////////////////////////////////////////////////////////////
 
-int LeftDoorOpen = 180;   //Servo 0
-int LeftDoorClose = 487;  //Servo 0
+// Maestro Config
 
-int RightDoorOpen = 440;   //Servo 1
-int RightDoorClose = 170;  //Servo 1
+#include <PololuMaestro.h> // added the Maestro libray
+#include <SoftwareSerial.h>
+SoftwareSerial maestroSerial(10, 11); //tx pin 11
+SoftwareSerial maestroBodySerial(12, 13); // tx on pin 13
 
-// Animation values
+MiniMaestro maestro_dome(maestroSerial); //software serial 11
+MiniMaestro maestro_body(maestroBodySerial); //software serial 13
 
-int GripperOpen = 270;   //Servo 3
-int GripperClose = 350;  //Servo 3
+//////////////////////////////////////////////////////////////////////////
 
-int GripperArmIn = 170;   //Servo 2
-int GripperArmOut = 620;  //Servo 2
+// Hall Sensor config for Dome Homing
 
-int InterOut = 430;  //Servo 7
-int InterIn = 140;   //Servo 7
-
-int InterArmIn = 610;   //Servo 6
-int InterArmOut = 170;  //Servo 6
-
-int UpperUtilOut = 535;  //Servo 5
-int UpperUtilIn = 90;    //Servo 5
-int LowerUtilOut = 525;  //Servo 4
-int LowerUtilIn = 130;   //Servo 4
-
-int dataportDoorOpen = 440;   //Servo 8
-int dataportDoorClose = 180;  //Servo 8
-
-int chargebayDoorOpen = 180;   //Servo 9
-int chargebayDoorClose = 310;  //Servo 9
-
-//Pie Open and Close positions for the Dome Servos
-
-int pie1Open = 420;   //Servo 2 (dome board)
-int pie1Close = 180;  //Servo 2 (dome board)
-
-int pie2Open = 420;   //Servo 3 (dome board)
-int pie2Close = 180;  //Servo 3 (dome board)
-
-int pie3Open = 420;   //Servo 6 (dome board)
-int pie3Close = 180;  //Servo 6 (dome board)
-
-int pie4Open = 420;   //Servo 7 (dome board)
-int pie4Close = 180;  //Servo 7 (dome board)
-
-// Dome Panel Posistions
-// Will have to remap these to the actual servo positions
-
-int domepanel1Open = 420;   //Servo 2 (dome board)
-int domepanel1Close = 180;  //Servo 2 (dome board)
-
-int domepanel2Open = 420;   //Servo 3 (dome board)
-int domepanel2Close = 180;  //Servo 3 (dome board)
-
-int domepanel3Open = 420;   //Servo 6 (dome board)
-int domepanel3Close = 180;  //Servo 6 (dome board)
-
-int domepanel4Open = 420;   //Servo 7 (dome board)
-int domepanel4Close = 180;  //Servo 7 (dome board)
-
-int domepanel5Open = 420;   //Servo 3 (dome board)
-int domepanel5Close = 180;  //Servo 3 (dome board)
-
-int domepanel6Open = 420;   //Servo 6 (dome board)
-int domepanel6Close = 180;  //Servo 6 (dome board)
-
-int domepanel7Open = 420;   //Servo 7 (dome board)
-int domepanel7Close = 180;  //Servo 7 (dome board)
-
-int domepanel8Open = 420;   //Servo 2 (dome board)
-int domepanel8Close = 180;  //Servo 2 (dome board)
-
-int domepanel9Open = 420;   //Servo 3 (dome board)
-int domepanel9Close = 180;  //Servo 3 (dome board)
-
-int domepanel10Open = 420;   //Servo 6 (dome board)
-int domepanel10Close = 180;  //Servo 6 (dome board)
-
-int domepanel11Open = 420;   //Servo 7 (dome board)
-int domepanel11Close = 180;  //Servo 7 (dome board)
-
-int domepanel12Open = 420;   //Servo 7 (dome board)
-int domepanel12Close = 180;  //Servo 7 (dome board)
-
-int domepanel13Open = 420;   //Servo 7 (dome board)
-int domepanel13Close = 180;  //Servo 7 (dome board)
+// Center hall sensor - 
+const int centerHallSensorPin = 4;  // Pin that the Hall Effect sensor is connected to
+int centerHallSensorState;          // Variable to store the state of the sensor
 
 
-/////////////////////////////////////////////////////////////////
+//How many seconds the dome should try to find home (center) before timing out
+byte homeDomeTimeout = 8;
+unsigned long homingMillis = 0;
+
+// Uncomment below lines of code if using left and right hall sensors as well
+
+//Left hall sensor
+// const int leftHallSensorPin = 5;  // Pin that the Hall Effect sensor is connected to
+//int leftHallSensorState;          // Variable to store the state of the sensor
+
+//Right hall sensor
+//const int rightHallSensorPin = 6;  // Pin that the Hall Effect sensor is connected to
+//int rightHallSensorState;          // Variable to store the state of the sensor
+
+///////////////////////////////////////////////////////////////////////////
+
 Sabertooth Sabertooth2x(128, Serial1);
 Sabertooth Syren10(128, Serial2);
+
+
+///////////////////////////////////////////////////////////////////////////
+
 
 // Satisfy IDE, which only needs to see the include statment in the ino.
 #ifdef dobogusinclude
@@ -232,11 +183,20 @@ Sabertooth Syren10(128, Serial2);
 boolean isDriveEnabled = false;
 
 // Automated functionality
+
 // Used as a boolean to turn on/off automated functions like periodic random sounds and periodic dome turns
+//If using as a static droid and want automation on startup without controller connected, change to true
 boolean isInAutomationMode = false;
+
+
 unsigned long automateMillis = 0;
+boolean bodyautomation = false; // used to turn on physical random events with servo animations
 // Action number used to randomly choose a sound effect or a dome turn
 byte automateAction = 0;
+
+int lastdirection = 0; // used for recalling whether the last direction we turned was left or right (0 is left, 1 is right)
+float relativemove = 0; // keep track of how much relative movement we've made from center in automation mode
+int movecount = 0; // count how many times we've moved through automation so we can reset dome position occassionally 
 
 
 int driveThrottle = 0;
@@ -267,48 +227,12 @@ ButtonEnum hpLightToggleButton;
 
 boolean isHPOn = false;
 
-/*
-//MB: Holoprojector amimaton variables...
-//TODO: Add holoprojector movements
-
-int HoloAni1a = 0;     //Holo animation counter
-int HoloAni1b = 0;     //Holo animation counter 2
-int HoloPWMstart = 0;  //Holo PWM starting postion (0, 4, 8 are the three holoprojectors)
-
-//Holo home position
-
-int Holo1_1 = 400;
-int Holo2_1 = 415;
-
-//Holo position 1
-
-int Holo1_2 = 300;
-int Holo2_2 = 425;
-
-//Holo position 2
-
-int Holo1_3 = 300;
-int Holo2_3 = 300;
-
-//Holo position 3
-
-int Holo1_4 = 500;
-int Holo2_4 = 400;
-
-//Holo position 4
-
-int Holo1_5 = 420;
-int Holo2_5 = 530;
-*/
-//MB: Gripperarm amimaton variables...
-
-int GripperAni1a = 0;  //Gripper animation counter
-int InterAni1a = 0;    //Interface Animation counter
-
 //Use DYPlayer instead of MP3Trigger. Change to false to use MP3Trigger instead
 boolean UseDYPlayer = true;
 
-int busyPinstate;
+int busyPinstate; //State of the DYPlayer busy signal
+int soundToPlay = 0; // used to store the result of a random sound to play
+int lastSoundPlayed = 0; // used to minimize chances of random sounds playing twice in a row
 
 
 DYPlayer dyPlayer;
@@ -319,20 +243,38 @@ MP3Trigger mp3Trigger;
 USB Usb;
 XBOXRECV Xbox(&Usb);
 
+// State for Gripper control - true = up, false = down
+boolean gripperState = false;
+
+//State for interface control - true = up, false = down
+boolean interfaceState = false; 
+
+unsigned long now = millis(); // used for keeping track of delay-free timers
+
+// ************************** Setup ***********************************
+
 void setup() {
   Serial1.begin(SABERTOOTHBAUDRATE);
   Serial2.begin(DOMEBAUDRATE);
-  //Astropixels Serial
-  Serial3.begin(9600);
+  //Astropixels Serial, may need 2400 by default
+  //Serial3.begin(9600);
 
   // Busy pin for DYPlayer
   pinMode(DYBUSYPIN, INPUT);
+  
+  // Start Maestro serial ports
+  maestroSerial.begin(9600);
+  maestroBodySerial.begin(9600);
 
-  //start pwn for servos
-  pwm1.begin();
-  pwm1.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
-  pwm2.begin();
-  pwm2.setPWMFreq(60);  // Analog servos run at ~60 Hz updates
+  // Set Maestro positions to default all closed
+  maestro_dome.restartScript(0);
+  maestro_body.restartScript(0);
+
+  // Hall Effect Sensor setup 
+  pinMode(centerHallSensorPin, INPUT);     // Set the center Hall Effect sensor pin as an INPUT
+  //pinMode(leftHallSensorPin, INPUT);     // Set the left Hall Effect sensor pin as an INPUT - uncomment if using
+  //pinMode(rightHallSensorPin, INPUT);     // Set the right Hall Effect sensor pin as an INPUT - uncomment if using
+  
 
 #if defined(SYRENSIMPLE)
   Syren10.motor(0);
@@ -370,6 +312,10 @@ void setup() {
     mp3Trigger.setVolume(vol);
   }
 
+  // Set the dome to center (home)
+  findhome();
+
+
 
   if (isLeftStickDrive) {
     throttleAxis = LeftHatY;
@@ -403,8 +349,15 @@ void setup() {
 }
 
 
+// ************************** Main Loop ***********************************
+
+
 void loop() {
+  
+  now = millis(); // set currentMillis to the current amount of time the sketch has been running
+  
   Usb.Task();
+
   // if we're not connected, return so we don't bother doing anything else.
   // set all movement to 0 so if we lose connection we don't have a runaway droid!
   // a restraining bolt and jawa droid caller won't save us here!
@@ -413,7 +366,9 @@ void loop() {
     Sabertooth2x.turn(0);
     Syren10.motor(1, 0);
     firstLoadOnConnect = false;
-    return;
+    if (isInAutomationMode == false){
+          return;
+    }
   }
   // Check if anything is playing, probably introduces race conditions reading once here, but shouldn't be too big of a deal
   busyPinstate = digitalRead(DYBUSYPIN);
@@ -497,6 +452,23 @@ void loop() {
     }
   }
 
+/*
+// OLD AUTOMATION STUFF, replaced with new logic
+  For Dome homing:
+
+  // Read the state of the sensor
+  centerHallSensorState = digitalRead(centerHallSensorPin); 
+
+  // Check if the sensor is detecting a magnetic field
+  if (centerHallSensorState == LOW) {
+    // Magnet is detected here, stop dome rotation
+    
+  } else {
+    // No magnet here, keep rotating 
+
+  }
+  
+  
   // Plays random sounds or dome movements for automations when in automation mode
   if (isInAutomationMode) {
     unsigned long currentMillis = millis();
@@ -530,9 +502,9 @@ void loop() {
 #endif
 
         if (turnDirection > 0) {
-          turnDirection = -45;
+          turnDirection = -35;
         } else {
-          turnDirection = 45;
+          turnDirection = 35;
         }
       }
 
@@ -540,6 +512,162 @@ void loop() {
       automateDelay = random(3, 10);
     }
   }
+*/
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////// New Automation Mode //////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+
+/*
+AUTOMATION MODE IS USED TO PLAY RANDOM SOUNDS AND SMALL DOME MOVEMENTS WITHOUT ANY REAL INTELLIGENCE
+*/
+
+  // Plays random sounds or dome movements for automations when in automation mode
+  if (isInAutomationMode) {
+    unsigned long currentMillis = millis();
+    
+
+    if (currentMillis - automateMillis > (automateDelay * 1000))
+    {
+      automateMillis = millis();
+      automateAction = random(1, 5);
+
+      /* 
+      //Remove body automation for now, not using it 
+      automateBody = random (1,40);
+      
+      if ((automateBody > 1) && (bodyautomation == true)){
+        if (automateBody == 15)
+            {
+              maestro.restartScript(1); // run maestro script: animation of gripper 
+            }
+        if (automateBody == 25)
+            {
+              maestro.restartScript(2); // run maestro script: animation of interface
+            }
+        if (automateBody == 35)
+            {
+              maestro.restartScript(3); // run maestro script: animation of utility arms
+            }
+        
+        
+      }
+      */
+
+
+      if (automateAction > 1) {
+        soundToPlay = random(32,52); // decide random sound
+
+        if (soundToPlay == lastSoundPlayed)
+          {
+          soundToPlay = random(32,52); // spin again to reduce chance of repetition 
+                if (soundToPlay == lastSoundPlayed)
+                {
+                soundToPlay = random(32,52); // spin again to reduce chance of repetition 
+                }
+          }
+
+        lastSoundPlayed = soundToPlay;
+        if (UseDYPlayer) {
+          if (busyPinstate > 0) {  //nothing playing
+              dyPlayer.Play(soundToPlay);
+            }
+          } else {
+            mp3Trigger.play(soundToPlay);
+          }
+      }
+
+      if (automateAction < 3) {
+      
+        // keep track of how far we're moving
+        randomSeed(now);
+        // int turndelay = (random(200,800));
+        int whichway = (random(1,100));
+      
+
+
+        // choose next direction randomly
+        if (whichway < 50){
+          turnDirection = 45; // turn left
+          lastdirection = 0;
+        }
+        else{
+          turnDirection = -45; // then turn right
+          lastdirection = 1;
+        }
+
+        /*
+        // choose next direction based on previous direction we moved
+        if (lastdirection == 0){ // if we last turned left
+          turnDirection = -45; // then turn right
+          lastdirection = 1;
+        }
+        else{
+          turnDirection = 45; // else turn left
+          lastdirection = 0;
+        }
+        */
+
+
+        if (relativemove >= 200){ // we've gone too far left 
+          turnDirection = -45; // lets go right
+          lastdirection = 1;
+        }
+        
+        if (relativemove <= -200){ // we've gone too far right
+          turnDirection = 45; // lets go left
+          lastdirection = 0;
+        }
+
+        if (turnDirection > 0){ // we decided to go left
+          relativemove = (relativemove + 100); // keep track of movement from center
+        }
+        else if (turnDirection < 0){ // we decided to go right
+          relativemove = (relativemove - 100); // keep track of movement from center
+        }
+      
+
+        movecount++;
+        if (movecount > 15) // if we've moved a lot, lets reset the dome position
+              {
+                if (relativemove >= 0)
+                    {
+                      lastdirection = 0;  
+                    }
+                  else if (relativemove < 0)
+                    {
+                      lastdirection = 1;
+                    }
+              findhome(); 
+              delay(2000);
+              }
+                  #if defined(SYRENSIMPLE)
+                          Syren10.motor(turnDirection);
+                  #else
+                          Syren10.motor(1, turnDirection);
+                  #endif
+
+                  // delay to allow  motors to turn
+                  delay(750);
+
+
+                  // stop motors turning
+                  #if defined(SYRENSIMPLE)
+                          Syren10.motor(0);
+                  #else
+                          Syren10.motor(1, 0);
+                  #endif
+
+        }
+
+        // sets the mix, max seconds between automation actions - sounds and dome movement
+        automateDelay = random(3,12);
+      }
+    }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////// End Automation Mode //////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////  
 
   // Volume Control of MP3 Trigger
   // Hold R1 and Press Up/down on D-pad to increase/decrease volume
@@ -666,7 +794,7 @@ void loop() {
       }
       //logic lights
       triggerI2C(10, 6);
-      astroPixelsSend("@APLE20005\r");
+      astroPixelsSend("@APLE20005");
       // HPEvent 11 - SystemFailure - I2C
       triggerI2C(25, 11);
       triggerI2C(26, 11);
@@ -681,7 +809,7 @@ void loop() {
       }
       //logic lights, alarm
       triggerI2C(10, 1);
-      astroPixelsSend("@APLE10505\r");
+      astroPixelsSend("@APLE10505");
       //  HPEvent 3 - alarm - I2C
       triggerI2C(25, 3);
       triggerI2C(26, 3);
@@ -771,7 +899,7 @@ void loop() {
       }
       //logic lights, leia message
       triggerI2C(10, 5);
-      astroPixelsSend("@APLE30000\r"); //Send leia sequence to astropixels
+      astroPixelsSend(":SE08"); //Send leia sequence to astropixels
       // Front HPEvent 1 - HoloMessage - I2C -leia message
       triggerI2C(25, 9);
     } else if (Xbox.getButtonPress(L2, 0)) {
@@ -914,68 +1042,17 @@ void loop() {
 
   Syren10.motor(1, domeThrottle);
 
-  if (InterAni1a > 0)  //Check to see if the animation loop has started
-  {
-    InterAni1a--;
-    interfaceAnimation(InterAni1a);
-  }
-
-  if (GripperAni1a > 0)  //Check to see if the animation loop has started
-  {
-    GripperAni1a--;
-    gripperArmAnimation(GripperAni1a);
-  }
-  
-
-
-  //Holprojector animation loop
-  // TODO: going to have to redo this for astropixels 
-  /*
-  if (HoloAni1a > 0)  //Check to see if the animation loop has started
-  {
-    HoloAni1a--;
-
-    if (HoloAni1a < 2)  //Return to home
-    {
-      pwm2.setPWM(HoloPWMstart + 2, 0, 0);        // lights off
-      pwm2.setPWM(HoloPWMstart + 3, 0, 0);        //lights off
-      pwm2.setPWM(HoloPWMstart, 0, Holo1_1);      //Servo1 home
-      pwm2.setPWM(HoloPWMstart + 1, 0, Holo2_1);  //Servo2 home
-
-    }
-
-    else if (HoloAni1a < 100)  // Event 4
-    {
-      pwm2.setPWM(HoloPWMstart, 0, Holo1_2);      //Servo1
-      pwm2.setPWM(HoloPWMstart + 1, 0, Holo2_2);  //Servo2
-    }
-
-    else if (HoloAni1a < 800)  // Event 4
-    {
-      pwm2.setPWM(HoloPWMstart, 0, Holo1_1);      //Servo1
-      pwm2.setPWM(HoloPWMstart + 1, 0, Holo2_1);  //Servo2
-    }
-
-    else if (HoloAni1a < 850)  //Event 3
-    {
-      pwm2.setPWM(HoloPWMstart, 0, Holo1_3);      //Servo1
-      pwm2.setPWM(HoloPWMstart + 1, 0, Holo2_3);  //Servo2
-    }
-
-    else if (HoloAni1a < 900)  //Event 2
-    {
-      pwm2.setPWM(HoloPWMstart, 0, Holo1_4);      //Servo1
-      pwm2.setPWM(HoloPWMstart + 1, 0, Holo2_4);  //Servo2
-    }
-
-    else if (HoloAni1a < 980)  //Event 1
-    {
-      pwm2.setPWM(HoloPWMstart + 2, 0, 4095);  // lights on
-      pwm2.setPWM(HoloPWMstart + 3, 0, 4095);  //lights on
-    }
-  }
-  */
 }  // END loop()
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////// END LOOP ////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 
 void triggerI2C(byte deviceID, byte eventID) {
   Wire.beginTransmission(deviceID);
@@ -984,79 +1061,106 @@ void triggerI2C(byte deviceID, byte eventID) {
 }
 
 void astroPixelsSend(byte command) {
-  Serial3.write(command);
+  Serial3.println(command);
 }
 
-void interfaceAnimation(int InterAni){
-  //Interface Arm Animation
+void stopx(){
+  Syren10.motor(1,0); // stop motor 
+}
 
-  switch (InterAni) {
-    case 900:
-      pwm1.setPWM(0, 0, LeftDoorOpen);
-      break;
-    case 800:
-      pwm1.setPWM(6, 0, InterArmOut);
-      break;
-    case 700:
-      pwm1.setPWM(7, 0, InterOut);
-      break;
-    case 600:
-      pwm1.setPWM(7, 0, InterIn);
-      break;
-    case 500:
-      pwm1.setPWM(7, 0, InterOut);
-      break;
-    case 400:
-      pwm1.setPWM(7, 0, InterIn);
-      break;
-    case 150:
-      pwm1.setPWM(6, 0, InterArmIn);
-      break;
-    case 2:
-      pwm1.setPWM(0, 0, LeftDoorClose);
-      break;
-    default:
-      // Do Nothing in between animation timings
-      break;
+void findhome(){
+  now = millis();
+  unsigned long seekinghome = now;
+  centerHallSensorState =  (digitalRead(centerHallSensorPin)); // read the home position sensor  to determine if we need to move
+
+  //Low means we found the magnet
+  while (centerHallSensorState !=  LOW){
+    now = millis();
+    centerHallSensorState =  (digitalRead(centerHallSensorPin)); // read the home position sensor
+    if (lastdirection == 1){
+        Syren10.motor(1,60); // turn left to find home
+    }
+    else{
+        Syren10.motor(1,-60); // turn right to find home
+    }
+    
+
+    // If we hit our timeout, stop the dome rotation
+    if ((now - seekinghome) >= (homeDomeTimeout * 1000)){
+        stopx();
+        break;
+    }
+
+    relativemove = 0;
+    movecount = 0;// reset the count of how many times automation moved the dome
+              
   }
-}
 
-void gripperArmAnimation(int GripperAni){
-  //Gripper Arm Animation
-  // Use a counter for the animation timings, crude and relies on clockspeed but works well enough 
+  
+  stopx();
+ 
+} // end find home routine
 
-  switch (GripperAni) {
-    case 900:
-      pwm1.setPWM(1, 0, RightDoorOpen); //Door Open
-      break;
-    case 800:
-      pwm1.setPWM(2, 0, GripperArmOut); //Arm Out
-      break;
-    case 700:
-      pwm1.setPWM(3, 0, GripperOpen); //Arm Gripper Open
-      break;
-    case 600:
-      pwm1.setPWM(3, 0, GripperClose); //Arm Gripper Close
-      break;
-    case 500:
-      pwm1.setPWM(3, 0, GripperOpen); //Arm Gripper Open
-      break;
-    case 400:
-      pwm1.setPWM(3, 0, GripperClose); //Arm Gripper Close
-      break;
-    case 150:
-      pwm1.setPWM(2, 0, GripperArmIn); //Arm in
-      break;
-    case 2:
-      pwm1.setPWM(1, 0, RightDoorClose); //Close the door
-      break;
-    default:
-      // Do Nothing in between animation timings
-      break;
-  }
-}
+
+/*
+Maestro Body Scripts:
+
+0 - All Closed (default)
+1 - Both Doors Close
+2 - Both Doors Open
+3 - Close DataPort
+4 - Close Door A
+5 - Close Door B
+6 - Close util
+7 - Dance Doors x3
+8 - Flap All x1
+9 - Flap All x2
+10 - Flap Doors x1
+11 - Flap Doors x2
+12 - Gripper Close 
+13 - Gripper Down
+14 - Gripper Open
+15 - Gripper Up
+16 - Interface Down
+17 - Interface Twist
+18 - Interface up
+19 - Open DataPort
+20 - Open Door A
+21 - Open Door B
+22 - Open util
+23 - Util open close
+24 - Wave Doors
+25 - Wave util
+26 -
+
+Maestro Dome Scripts:
+
+0 - Close All 
+1 - All Flap
+2 - All Open
+3 - Dance
+4 - Pie CLose
+5 - Pie Open
+6 - Pie Wave
+7 - Wave
+8 - Chase - Fast
+9 - Chase - Slow
+10 - Pie2 Wave
+11 - Pie2,3 Dance
+12 - Pie Both Wave
+13 - 
+
+*/
 
 void Check_Chatpad() {
+  /*
+  Modifiers:
+    MODIFIER_SHIFT = 0,
+    MODIFIER_GREENBUTTON = 1,
+    MODIFIER_ORANGEBUTTON = 2,
+    MODIFIER_MESSENGER = 3
+  
+  */
  
   if (Xbox.getChatpadClick(XBOX_CHATPAD_D2, 0)) {
       //Theme
@@ -1066,7 +1170,7 @@ void Check_Chatpad() {
   if (Xbox.getChatpadClick(XBOX_CHATPAD_D3, 0)) {
     //Imperial March
     dyPlayer.Play(11); // Imperial March 3m 5s
-    astroPixelsSend("@APLE40500\r");
+    // astroPixelsSend("@APLE40500");
   }  
   
   if (Xbox.getChatpadClick(XBOX_CHATPAD_D4, 0)) {
@@ -1092,6 +1196,8 @@ void Check_Chatpad() {
   if (Xbox.getChatpadClick(XBOX_CHATPAD_O, 0)) {
     //scream
     dyPlayer.Play(1); // Scream
+    maestro_dome.restartScript(1);
+    maestro_body.restartScript(9);
   }
 /*
   if (Xbox.getChatpadClick(XBOX_CHATPAD_D, 0)) {
@@ -1104,8 +1210,10 @@ void Check_Chatpad() {
   }
 
   if (Xbox.getChatpadClick(XBOX_CHATPAD_X, 0)) {
-      //shortcircuit
+    //shortcircuit
     dyPlayer.Play(13); // Short Circuit
+    maestro_dome.restartScript(7);
+    maestro_body.restartScript(7);
   }
   /*
 
@@ -1114,20 +1222,47 @@ void Check_Chatpad() {
       dyPlayer.Play(2); // Chortle
   }
   */
-
-  if (Xbox.getChatpadClick(XBOX_CHATPAD_U, 0)) {
-      // Utility Arms Open/Close
-      //dyPlayer.Play(2); // Chortle
-  }
   //start Interface Arm animation when pressing I
   if (Xbox.getChatpadClick(XBOX_CHATPAD_I, 0)) {
-      // Interface Animation
-      InterAni1a = 1000;
+    // Interface up
+    maestro_body.restartScript(18);
+    interfaceState = true;
+    // Interface Down
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      maestro_body.restartScript(16);
+      interfaceState = false;
+    }
+    // Green + I will twist interface if it is up
+    if (Xbox.getChatpadModifierState(MODIFIER_GREENBUTTON)){
+      if (interfaceState){
+        maestro_body.restartScript(17);
+      }
+    }
+      
   }
-  //start gripper animation when pressing G
+
+  //Gripper Controls, G for up shift-G for down, green and orange + G for control
   if (Xbox.getChatpadClick(XBOX_CHATPAD_G, 0)) {
-      // Gripper Animation
-      GripperAni1a = 1000;
+    // Gripper up
+    maestro_body.restartScript(15);
+    gripperState = true;
+    // Gripper Down
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      maestro_body.restartScript(13);
+      gripperState = false;
+    }
+    // Green + G will Open Gripper if it is up
+    if (Xbox.getChatpadModifierState(MODIFIER_GREENBUTTON)){
+      if (gripperState){
+        maestro_body.restartScript(14);
+      }
+    }
+    // Orange + G will Close gripper if it is up
+    if (Xbox.getChatpadModifierState(MODIFIER_ORANGEBUTTON)){
+      if (gripperState){
+        maestro_body.restartScript(12);
+      }
+    }
   }
 
 //Use "SPACE" to stop music and return to random lights
@@ -1136,74 +1271,121 @@ void Check_Chatpad() {
       dyPlayer.Stop();
   }
 
-  //PCA9685 controls
+  //Maestro Commands
+  // TODO: Finish converting to Maestro commands
 
   //start movement UTIL to upper or lower when pressing U
   if (Xbox.getChatpadClick(XBOX_CHATPAD_U, 0)) {
     //ChatPad U - Open util arms
-    pwm1.setPWM(5, 0, UpperUtilIn);
-    pwm1.setPWM(4, 0, LowerUtilIn);
+    maestro_body.restartScript(22);
     if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
-      pwm1.setPWM(5, 0, UpperUtilOut);
-      pwm1.setPWM(4, 0, LowerUtilOut);
+      maestro_body.restartScript(6);
+    }
+    // Flap Util
+    if (Xbox.getChatpadModifierState(MODIFIER_GREENBUTTON)){
+      maestro_body.restartScript(23);
+    }
+    // Wave util
+    if (Xbox.getChatpadModifierState(MODIFIER_ORANGEBUTTON)){
+      maestro_body.restartScript(25);
     }
   }
-  /*
-  //L1+Right - close all
-  if (Xbox.getButtonPress(RIGHT, 0)) {
-
-    pwm1.setPWM(5, 0, UpperUtilOut);
-    pwm1.setPWM(4, 0, LowerUtilOut);
-    pwm1.setPWM(9, 0, chargebayDoorClose);
-    pwm1.setPWM(8, 0, dataportDoorClose);
-    pwm2.setPWM(2, 0, pie1Close);
-    pwm2.setPWM(3, 0, pie2Close);
-    pwm2.setPWM(6, 0, pie3Close);
-    pwm2.setPWM(7, 0, pie4Close);
-  }
-  */
 
   //Open Dataport with D, shut with shift D
   if (Xbox.getChatpadClick(XBOX_CHATPAD_D, 0)) {
-    pwm1.setPWM(8, 0, dataportDoorOpen);
+    maestro_body.restartScript(19);
     if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
-      pwm1.setPWM(8, 0, dataportDoorClose);
+      maestro_body.restartScript(3);
+    }
+    if (Xbox.getChatpadModifierState(MODIFIER_GREENBUTTON)){
+      maestro_dome.restartScript(11);
     }
   }
 
-  //Open Chagebay with C, close with shift C
-  if (Xbox.getChatpadClick(XBOX_CHATPAD_C, 0)) {
-    pwm1.setPWM(9, 0, chargebayDoorOpen);
+  //Open Door A with A
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_A, 0)) {
+    maestro_body.restartScript(20);
     if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
-      pwm1.setPWM(9, 0, chargebayDoorClose);
+      maestro_body.restartScript(4);
+    }
+  }
+
+  //Open Door B with B
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_B, 0)) {
+    maestro_body.restartScript(21);
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      maestro_body.restartScript(5);
+    }
+  }
+
+  //Open all Dome with C, close all Dome with shift c
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_C, 0)) {
+    maestro_dome.restartScript(2);
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      maestro_dome.restartScript(0);
+    }
+    if (Xbox.getChatpadModifierState(MODIFIER_GREENBUTTON)){
+      maestro_dome.restartScript(1);
     }
   }
 
   //Open all Dome pies (1,2,3,4) with P, shut with shift P
+  //Open Pies
   if (Xbox.getChatpadClick(XBOX_CHATPAD_P, 0)) {
-    pwm2.setPWM(2, 0, pie1Open);
-    pwm2.setPWM(3, 0, pie2Open);
-    pwm2.setPWM(6, 0, pie3Open);
-    pwm2.setPWM(7, 0, pie4Open);
+    maestro_dome.restartScript(5);
+    //Close Pies
     if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
-      pwm2.setPWM(2, 0, pie1Close);
-      pwm2.setPWM(3, 0, pie2Close);
-      pwm2.setPWM(6, 0, pie3Close);
-      pwm2.setPWM(7, 0, pie4Close);
+      maestro_dome.restartScript(4);
+    }
+    // Green + p = pie wave
+    if (Xbox.getChatpadModifierState(MODIFIER_GREENBUTTON)){
+      maestro_dome.restartScript(6);
+    }
+    // orange + p = All wave
+    if (Xbox.getChatpadModifierState(MODIFIER_ORANGEBUTTON)){
+      maestro_dome.restartScript(7);
+    }
+  }
+  // Wave Hi with Pie 2 or 2 and 3 or dance both with H
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_H, 0)) {
+    // Pie 2 wave
+    maestro_dome.restartScript(10);
+    // Both wave
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      maestro_dome.restartScript(12);
+    }
+    // Both Dance
+    if (Xbox.getChatpadModifierState(MODIFIER_GREENBUTTON)){
+      maestro_dome.restartScript(11);
     }
   }
 
-  //HoloProjector1,2 and 3 animation
-  /*
-  if (Xbox.getButtonPress(LEFT, 0)) {
-
-    if (Xbox.getButtonPress(R1, 0)) {
-      HoloPWMstart = 0;
-      HoloPWMstart = 4;
-      HoloPWMstart = 8;
-      HoloAni1a = 1000;
+  // Flap Doors or panels with F
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_F, 0)) {
+    // Flap All x2
+    maestro_body.restartScript(9);
+    // Flap Doors x2
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      maestro_body.restartScript(11);
+    }
+    // Flap Pies
+    if (Xbox.getChatpadModifierState(MODIFIER_GREENBUTTON)){
+      maestro_dome.restartScript(1);
     }
   }
-  */
+
+  // Chase with Y
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_Y, 0)) {
+    // Fast Chase
+    maestro_dome.restartScript(8);
+    // Slow Chase
+    if (Xbox.getChatpadModifierState(MODIFIER_SHIFT, 0)){
+      maestro_dome.restartScript(9);
+    }
+  }
+  // Manually home the dome with J
+  if (Xbox.getChatpadClick(XBOX_CHATPAD_J, 0)) {
+    findhome();
+  }
  
 }
