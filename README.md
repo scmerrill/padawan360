@@ -1,7 +1,7 @@
 # Padawan360
 
 ## Changes and Version bumping
-Since it's release, padawan360 has been a great option for droid builders everywhere. Dan Kraus and before him DanF have been great in providing this code and making it accessible. However over the years standard components and electronics have become cheaper, and changed and there are more and more alternatives. Because of this it has been modified and changed over the years by individual droid builders. Every droid is different and is built with different components and this is my take on the components. I have added several things andd swapped out some parts for cheaper ones but the base code remains, and for good reason: it is pretty solid and robust, but the base code doesn't get updated very often.
+Since it's release, padawan360 has been a great option for droid builders everywhere. Dan Kraus and before him DanF have been great in providing this code and making it accessible. However over the years standard components and electronics have become cheaper, and changed and there are more and more alternatives. Because of this it has been modified and changed over the years by individual droid builders. Every droid is different and is built with different components and this is my take on the components. I have added several things and swapped out some parts for cheaper ones but the base code remains, and for good reason: it is pretty solid and robust, but the base code doesn't get updated very often.
 
 So this is my versioning of the code and becasuse of the significant changes I figured it's probably time for a version bump. Because a lot of the base cod eis still the same just with lots of additions and customizing I think it is fitting. I may end up generalizing this code and making a PR to the main repo, but over the years I feel that repo and code has gotten a little messy and needs to be cleaned up a little. I do understand that because it is meant to be accessible to as many people as possible there is good reason for this, but pretty much every original sketch hasn't been touched in 10 years except the body arduino mega code so that is the only code here.
 
@@ -54,24 +54,22 @@ The R2/Droid Builders have a long history of raising money for groups like [Make
   - [Teeces lights](#teeces-lights)
   - [Astropixels](#astropixels)
     - [Optional](#optional)
-      - [RSeries RGB HPs.](#rseries-rgb-hps)
       - [Slipring](#slipring)
 - [Setup](#setup)
   - [Arduino IDE](#arduino-ide)
   - [USB Shield](#usb-shield-1)
   - [Sound](#sound)
   - [Astropixels](#astropixels-1)
-  - [PCA9685](#pca9685-servo-controller-1)
+  - [Servo Controllers](#servo-controllers)
+    - [PCA9685](#pca9685-servo-controller-1)
+    - [Pololu Maestro](#pololu-maestro)
   - [Dome](#dome)
     - [Option 1](#option-1)
     - [Option 2 (Best Option)](#option-2--best-option-)
   - [Foot Drive](#foot-drive)
-  - [Arduino UNO/MEGA](#arduino-uno-mega)
-    - [I2C](#i2c)
+  - [Arduino MEGA](#arduino-uno-mega)
   - [Controller Pairing](#controller-pairing)
   - [Options, Configurations, and Settings](#options--configurations--and-settings)
-  - [Teeces Logics](#teeces-logics)
-  - [HoloProjectors I2C](#holoprojectors-i2c)
   - [Video Guide](#video-guide)
 - [Controls](#controls)
   - [Controller LED Status](#controller-led-status)
@@ -81,7 +79,6 @@ The R2/Droid Builders have a long history of raising money for groups like [Make
   - [Sound](#sound-1)
   - [Dome](#dome-1)
   - [Drives](#drives)
-- [Coming Soon](#coming-soon)
 - [Licensing](#licensing)
 
 ## Intro
@@ -197,12 +194,8 @@ This current sketch removed the PCA9685 support since I switched to a Maestro fo
 
 - #### Optional
 
-  - ##### RSeries RGB HPs.
-
-    Sketches provided are for I2C holoprojector boards. The front uses the one with the servo pinouts although the sketch doesn't servo control of the HPs. The top and rear HP are just the regular I2C controlled boards.
-
   - ##### Slipring
-    Used to pass power up from the body to the dome and also signal for I2C to control dome lights. The slipring allows wires to go from body to dome and allow the dome to spin 360 degrees without tangling the wires.
+    Used to pass power up from the body to the dome and also signal for astropixels and the dome Maestro. The slipring allows wires to go from body to dome and allow the dome to spin 360 degrees without tangling the wires.
 
 ## Setup
 
